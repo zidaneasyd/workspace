@@ -1,1 +1,679 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Utuh & Bersih - Music Player</title>
+    <!-- JS Media Tags untuk membaca ID3 / Metadata -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
+    <style>
+        :root {
+            --primary: #111827;      /* Hitam bersih */
+            --bg-color: #ffffff;     /* Putih bersih */
+            --text-main: #111827;
+            --text-muted: #9ca3af;
+            --overlay: rgba(0, 0, 0, 0.4);
+        }
 
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden; /* Mencegah scroll di body */
+        }
+
+        /* Container Anti-Tembus & Fullview */
+        .mobile-container {
+            width: 100%;
+            max-width: 480px;
+            height: 100vh;
+            background-color: var(--bg-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* --- HALAMAN UTAMA (NO SCROLL, FLEXBOX SEMPURNA) --- */
+        .view-page {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--bg-color);
+            transition: transform 0.3s ease-in-out;
+            z-index: 1;
+        }
+
+        /* Geser halaman ke kiri saat playlist terbuka */
+        .view-page.hidden-left {
+            transform: translateX(-30%);
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        /* KOTAK 1:1 UTUH DI ATAS */
+        .album-art-wrapper {
+            width: 100%;
+            /* Menjamin kotak tetap 1:1 tapi tidak memakan ruang kontrol bawah di layar pendek */
+            max-height: 55vh; 
+            aspect-ratio: 1 / 1;
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            cursor: pointer;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .album-art-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .album-art-wrapper svg.default-icon {
+            width: 64px;
+            height: 64px;
+            fill: var(--text-muted);
+        }
+
+        /* Tulisan petunjuk super samar */
+        .playlist-hint {
+            position: absolute;
+            bottom: 12px;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(4px);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        /* BAGIAN BAWAH (INFO & KONTROL) - Fleksibel mengisi sisa ruang */
+        .bottom-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 0 32px;
+            gap: 24px; /* Jarak proporsional antar elemen */
+        }
+
+        .track-info {
+            text-align: center;
+            width: 100%;
+        }
+
+        .track-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 4px;
+        }
+
+        .track-artist {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .progress-container {
+            width: 100%;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background-color: #e5e7eb;
+            border-radius: 2px;
+            appearance: none;
+            outline: none;
+            accent-color: var(--primary);
+        }
+
+        .progress-bar::-webkit-slider-thumb {
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            background: var(--primary);
+            border-radius: 50%;
+        }
+
+        .time-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        /* KONTROL BERSIH TANPA GARIS */
+        .controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+        }
+
+        .control-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn svg {
+            width: 32px;
+            height: 32px;
+            fill: currentColor;
+        }
+
+        .control-btn.play-pause svg {
+            width: 54px;
+            height: 54px;
+        }
+
+        /* --- HALAMAN DAFTAR LAGU (PLAYLIST) --- */
+        .playlist-page {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            transform: translateX(100%);
+            transition: transform 0.3s ease-in-out;
+            z-index: 2;
+        }
+
+        .playlist-page.active {
+            transform: translateX(0);
+        }
+
+        .playlist-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .btn-text {
+            background: none;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--primary);
+            cursor: pointer;
+        }
+
+        #file-input { display: none; }
+
+        /* SCROLL DAFTAR LOKAL BERSIH */
+        .playlist-scroll {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding-bottom: 30px;
+            scrollbar-width: none;
+        }
+        .playlist-scroll::-webkit-scrollbar { display: none; }
+
+        .playlist-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            background: transparent;
+        }
+
+        .playlist-item-info {
+            flex: 1;
+            overflow: hidden;
+            margin-right: 12px;
+        }
+
+        .playlist-item-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: var(--text-main);
+        }
+
+        .playlist-item.active .playlist-item-title {
+            color: #2563eb; /* Warna penanda lagu aktif */
+        }
+
+        .playlist-item-artist {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* Tombol X Hapus */
+        .btn-delete {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+        .btn-delete svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        /* --- MODAL KONFIRMASI HAPUS --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--overlay);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 100;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.2s;
+        }
+        .modal-overlay.active {
+            opacity: 1; pointer-events: auto;
+        }
+        .modal-box {
+            background: #fff; padding: 24px;
+            width: 85%; max-width: 320px;
+            border-radius: 20px;
+            text-align: center;
+            transform: scale(0.9);
+            transition: transform 0.2s;
+        }
+        .modal-overlay.active .modal-box {
+            transform: scale(1);
+        }
+        .modal-box p { font-size: 1rem; font-weight: 600; margin-bottom: 24px; color: var(--text-main); }
+        .modal-buttons { display: flex; gap: 12px; }
+        .modal-btn {
+            flex: 1; padding: 12px; border: none; border-radius: 12px;
+            font-weight: 600; font-size: 0.9rem; cursor: pointer;
+        }
+        .btn-cancel { background: #f3f4f6; color: var(--text-main); }
+        .btn-confirm { background: #ef4444; color: #fff; }
+    </style>
+</head>
+<body>
+
+    <div class="mobile-container">
+        
+        <!-- HALAMAN UTAMA -->
+        <div class="view-page" id="player-view">
+            <!-- Kotak Sampul Album 1:1, Ketuk Buka Playlist -->
+            <div class="album-art-wrapper" id="open-playlist-btn">
+                <div id="album-art-container" style="width:100%; height:100%; display:flex; justify-content:center; align-items:center;">
+                    <svg class="default-icon" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+                </div>
+                <div class="playlist-hint">Ketuk untuk Daftar Lagu</div>
+            </div>
+            
+            <!-- Flexbox Bawah untuk menjaga posisi responsif -->
+            <div class="bottom-section">
+                <div class="track-info">
+                    <div class="track-title" id="track-title">Belum ada lagu</div>
+                    <div class="track-artist" id="track-artist">Tambahkan musik lokal</div>
+                </div>
+
+                <div class="progress-container">
+                    <input type="range" class="progress-bar" id="progress-bar" value="0" max="100" step="0.1">
+                    <div class="time-info">
+                        <span id="current-time">00:00</span>
+                        <span id="duration">00:00</span>
+                    </div>
+                </div>
+
+                <!-- Kontrol Utama Bersih -->
+                <div class="controls">
+                    <button class="control-btn" id="prev-btn">
+                        <!-- Icon Prev (Bersih) -->
+                        <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+                    </button>
+                    <button class="control-btn play-pause" id="play-pause-btn">
+                        <!-- Icon Play (Bersih) -->
+                        <svg id="play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    </button>
+                    <button class="control-btn" id="next-btn">
+                        <!-- Icon Next (Bersih) -->
+                        <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6h2v12h-2V6z"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- HALAMAN PLAYLIST -->
+        <div class="playlist-page" id="playlist-page">
+            <div class="playlist-header">
+                <button class="btn-text" id="back-btn">Kembali</button>
+                <button class="btn-text" onclick="document.getElementById('file-input').click()">+ Tambah</button>
+                <input type="file" id="file-input" accept="audio/*" multiple>
+            </div>
+            <div class="playlist-scroll" id="playlist"></div>
+        </div>
+
+        <!-- MODAL KONFIRMASI HAPUS -->
+        <div class="modal-overlay" id="delete-modal">
+            <div class="modal-box">
+                <p>Hapus lagu ini dari daftar?</p>
+                <div class="modal-buttons">
+                    <button class="modal-btn btn-cancel" onclick="closeModal()">Batal</button>
+                    <button class="modal-btn btn-confirm" id="confirm-delete-btn">Hapus</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <audio id="audio-element"></audio>
+
+    <script>
+        const DB_NAME = 'MusicPlayerDB'; 
+        const STORE_NAME = 'songs';
+        let db;
+
+        const request = indexedDB.open(DB_NAME, 2);
+
+        request.onerror = (event) => console.error("Gagal membuka DB", event);
+        request.onsuccess = (event) => {
+            db = event.target.result;
+            loadSongsFromDB();
+        };
+        request.onupgradeneeded = (event) => {
+            db = event.target.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+            }
+        };
+
+        const audio = document.getElementById('audio-element');
+        const fileInput = document.getElementById('file-input');
+        const playPauseBtn = document.getElementById('play-pause-btn');
+        const playIcon = document.getElementById('play-icon');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const progressBar = document.getElementById('progress-bar');
+        const currentTimeEl = document.getElementById('current-time');
+        const durationEl = document.getElementById('duration');
+        const trackTitleEl = document.getElementById('track-title');
+        const trackArtistEl = document.getElementById('track-artist');
+        const playlistEl = document.getElementById('playlist');
+        const albumArtContainer = document.getElementById('album-art-container');
+        
+        const playerView = document.getElementById('player-view');
+        const playlistPage = document.getElementById('playlist-page');
+        const openPlaylistBtn = document.getElementById('open-playlist-btn');
+        const backBtn = document.getElementById('back-btn');
+        const deleteModal = document.getElementById('delete-modal');
+
+        let playlist = [];
+        let currentIndex = 0;
+        let currentSongId = null; // Bug Fix: Melacak ID lagu untuk sinkronisasi index saat lagu dihapus
+        let songIdToDelete = null;
+
+        // Navigasi
+        openPlaylistBtn.addEventListener('click', () => {
+            playlistPage.classList.add('active');
+            playerView.classList.add('hidden-left');
+        });
+
+        backBtn.addEventListener('click', () => {
+            playlistPage.classList.remove('active');
+            playerView.classList.remove('hidden-left');
+        });
+
+        // Modal Logic
+        window.openDeleteModal = function(event, id) {
+            event.stopPropagation();
+            songIdToDelete = id;
+            deleteModal.classList.add('active');
+        }
+
+        window.closeModal = function() {
+            deleteModal.classList.remove('active');
+            songIdToDelete = null;
+        }
+
+        document.getElementById('confirm-delete-btn').addEventListener('click', () => {
+            if (songIdToDelete !== null) {
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                store.delete(songIdToDelete);
+
+                transaction.oncomplete = () => {
+                    closeModal();
+                    loadSongsFromDB();
+                };
+            }
+        });
+
+        // Proses Tambah File
+        fileInput.addEventListener('change', (e) => {
+            const files = e.target.files;
+            if (files.length === 0) return;
+
+            Array.from(files).forEach(file => {
+                window.jsmediatags.read(file, {
+                    onSuccess: function(tag) {
+                        const tags = tag.tags;
+                        const songName = tags.title || file.name.replace(/\.[^/.]+$/, "");
+                        const artistName = tags.artist || "Artis Tidak Dikenal";
+                        
+                        let pictureData = null;
+                        if (tags.picture) {
+                            const { data, format } = tags.picture;
+                            let base64String = "";
+                            for (let i = 0; i < data.length; i++) {
+                                base64String += String.fromCharCode(data[i]);
+                            }
+                            pictureData = `data:${format};base64,${window.btoa(base64String)}`;
+                        }
+                        saveToDB({ name: songName, artist: artistName, picture: pictureData, file: file });
+                    },
+                    onError: function() {
+                        saveToDB({ name: file.name.replace(/\.[^/.]+$/, ""), artist: "Artis Tidak Dikenal", picture: null, file: file });
+                    }
+                });
+            });
+            fileInput.value = '';
+        });
+
+        function saveToDB(songData) {
+            const transaction = db.transaction([STORE_NAME], 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            store.add(songData);
+            transaction.oncomplete = () => loadSongsFromDB();
+        }
+
+        function loadSongsFromDB() {
+            if (!db) return;
+            const transaction = db.transaction([STORE_NAME], 'readonly');
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.getAll();
+
+            request.onsuccess = (event) => {
+                playlist = event.target.result.map(song => ({
+                    ...song,
+                    name: song.name || "Lagu Tanpa Nama",
+                    artist: song.artist || "Musik Lokal",
+                    picture: song.picture || null
+                }));
+
+                // BUG FIX: Sesuaikan index baru jika lagu ditengah dihapus
+                if (currentSongId !== null) {
+                    const newIndex = playlist.findIndex(s => s.id === currentSongId);
+                    if (newIndex !== -1) {
+                        currentIndex = newIndex; // Update index
+                    } else {
+                        // Lagu yang sedang diputar dihapus
+                        audio.pause();
+                        audio.src = '';
+                        if (playlist.length > 0) loadSong(0, false);
+                        else resetPlayerState();
+                    }
+                } else if (playlist.length > 0 && !audio.src) {
+                    loadSong(0, false);
+                }
+
+                renderPlaylist();
+            };
+        }
+
+        function renderPlaylist() {
+            playlistEl.innerHTML = '';
+            if (playlist.length === 0) {
+                playlistEl.innerHTML = '<li style="text-align:center; color:var(--text-muted); font-size:0.9rem; padding:40px 0;">Data kosong.</li>';
+                return;
+            }
+
+            playlist.forEach((song, index) => {
+                const li = document.createElement('li');
+                li.className = `playlist-item ${index === currentIndex ? 'active' : ''}`;
+                li.innerHTML = `
+                    <div class="playlist-item-info">
+                        <div class="playlist-item-title">${song.name}</div>
+                        <div class="playlist-item-artist">${song.artist}</div>
+                    </div>
+                    <!-- Icon X (Clean) -->
+                    <button class="btn-delete" onclick="openDeleteModal(event, ${song.id})">
+                        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                    </button>
+                `;
+                li.addEventListener('click', (e) => {
+                    if (e.target.closest('button')) return;
+                    loadSong(index);
+                    playSong();
+                    // Auto tutup playlist jika lagu diklik
+                    playlistPage.classList.remove('active');
+                    playerView.classList.remove('hidden-left');
+                });
+                playlistEl.appendChild(li);
+            });
+        }
+
+        function resetPlayerState() {
+            trackTitleEl.textContent = 'Belum ada lagu';
+            trackArtistEl.textContent = 'Tambahkan musik lokal';
+            currentSongId = null;
+            resetAlbumArt();
+            playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>'; // Play Icon
+            progressBar.value = 0;
+            currentTimeEl.textContent = "00:00";
+            durationEl.textContent = "00:00";
+        }
+
+        function loadSong(index) {
+            if (index < 0 || index >= playlist.length) return;
+            currentIndex = index;
+            const song = playlist[currentIndex];
+            currentSongId = song.id;
+
+            trackTitleEl.textContent = song.name;
+            trackArtistEl.textContent = song.artist;
+
+            if (song.picture) {
+                albumArtContainer.innerHTML = `<img src="${song.picture}" alt="Album Art">`;
+            } else {
+                resetAlbumArt();
+            }
+
+            audio.src = URL.createObjectURL(song.file);
+            renderPlaylist(); // Update warna aktif di daftar
+        }
+
+        function resetAlbumArt() {
+            albumArtContainer.innerHTML = `<svg class="default-icon" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>`;
+        }
+
+        function togglePlayPause() {
+            if (playlist.length === 0) return;
+            if (audio.paused) playSong();
+            else pauseSong();
+        }
+
+        function playSong() {
+            if (!audio.src && playlist.length > 0) loadSong(currentIndex);
+            audio.play().then(() => {
+                // Ikon Pause 
+                playIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+            }).catch(err => console.log(err));
+        }
+
+        function pauseSong() {
+            audio.pause();
+            // Ikon Play
+            playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+        }
+
+        playPauseBtn.addEventListener('click', togglePlayPause);
+
+        prevBtn.addEventListener('click', () => {
+            if (playlist.length === 0) return;
+            currentIndex = (currentIndex - 1 + playlist.length) % playlist.length;
+            loadSong(currentIndex);
+            playSong();
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (playlist.length === 0) return;
+            currentIndex = (currentIndex + 1) % playlist.length;
+            loadSong(currentIndex);
+            playSong();
+        });
+
+        audio.addEventListener('ended', () => {
+            if (playlist.length > 0) nextBtn.click();
+        });
+
+        audio.addEventListener('timeupdate', () => {
+            if (audio.duration) {
+                progressBar.value = (audio.currentTime / audio.duration) * 100;
+                currentTimeEl.textContent = formatTime(audio.currentTime);
+                durationEl.textContent = formatTime(audio.duration);
+            }
+        });
+
+        progressBar.addEventListener('input', () => {
+            if (audio.duration) {
+                audio.currentTime = (progressBar.value / 100) * audio.duration;
+            }
+        });
+
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = Math.floor(seconds % 60);
+            return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+        }
+    </script>
+</body>
+</html>
