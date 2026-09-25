@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Task Manager - Minimalist Workspace</title>
   <style>
     /* =========================================
@@ -445,6 +445,422 @@
       
       .preview-container { width: 100%; height: 100%; border-radius: 0; } 
       .app-launcher-menu { right: 16px; top: 52px; } 
+    }
+
+    /* =========================================
+       9. RESPONSIVE HARDENING / FLEXBOX SAFETY
+       ========================================= */
+    html {
+      width: 100%;
+      min-height: 100%;
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+      overscroll-behavior: none;
+    }
+
+    body, button, input, select, textarea {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .app-wrapper, .app-body, .main-content, .main-grid, .home-layout,
+    .col-wrapper, .col-body, .info-detail-view, .desc-subtask-grid,
+    .scroll-area-y, .card-content {
+      min-width: 0;
+      min-height: 0;
+    }
+
+    .app-body, .main-content, .main-grid, .home-layout, .col-wrapper {
+      overflow: hidden;
+    }
+
+    .main-grid {
+      grid-template-columns:
+        minmax(260px, 3fr)
+        minmax(340px, 5fr)
+        minmax(220px, 2fr);
+    }
+
+    .col-body {
+      overflow-x: hidden;
+    }
+
+    .card {
+      touch-action: manipulation;
+      min-width: 0;
+    }
+
+    .drag-handle {
+      touch-action: none;
+    }
+
+    .content-top, .content-bottom, .action-row, .status-group {
+      min-width: 0;
+    }
+
+    .status-group {
+      flex-shrink: 0;
+    }
+
+    .status-group .btn-action {
+      flex-shrink: 0;
+    }
+
+    .modal-panel {
+      max-height: min(90dvh, 680px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    @media (max-width: 1199px) and (min-width: 992px) {
+      .universal-header { padding-inline: 18px; }
+      .main-grid, .home-layout { padding: 18px; gap: 18px; }
+      .main-grid {
+        grid-template-columns:
+          minmax(230px, 2.8fr)
+          minmax(330px, 4.8fr)
+          minmax(210px, 2.4fr);
+      }
+      .col-header { padding-inline: 18px; }
+      .col-body { padding: 18px 16px; }
+    }
+
+    @media (max-width: 991px) {
+      :root {
+        --mobile-nav-h: 64px;
+      }
+
+      body {
+        width: 100%;
+        height: 100dvh;
+        min-height: 100dvh;
+        overflow: hidden;
+      }
+
+      .app-wrapper {
+        height: 100dvh;
+        min-height: 100dvh;
+      }
+
+      .universal-header {
+        flex: 0 0 var(--header-h);
+        width: 100%;
+        min-width: 0;
+        padding-inline: 12px;
+      }
+
+      .header-brand {
+        min-width: 0;
+      }
+
+      #globalHeaderTitle {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .app-body {
+        position: relative;
+        flex: 1 1 auto;
+        height: auto;
+        min-height: 0;
+        width: 100%;
+      }
+
+      .sidebar {
+        width: 100%;
+        height: calc(var(--mobile-nav-h) + env(safe-area-inset-bottom));
+        padding: 0 0 env(safe-area-inset-bottom);
+      }
+
+      .nav-item {
+        min-width: 0;
+        min-height: 44px;
+      }
+
+      .main-content {
+        position: relative;
+        flex: 1 1 auto;
+        width: 100%;
+        height: auto;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      .main-grid, .home-layout {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        padding: 12px;
+        gap: 12px;
+      }
+
+      .main-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr);
+      }
+
+      .home-layout {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr);
+      }
+
+      /* Media column benar-benar kolom ketiga (sheet-backdrop adalah div). */
+      .main-grid > .col-wrapper:nth-of-type(3),
+      .home-layout > .col-wrapper:nth-of-type(2) {
+        display: none !important;
+      }
+
+      .main-grid > .col-wrapper:first-of-type {
+        display: flex;
+        grid-column: 1;
+        grid-row: 1;
+      }
+
+      /* Mobile detail = full-view di area aplikasi, bukan bottom-sheet yang menutup konten. */
+      .main-grid.mobile-detail-open {
+        padding: 0;
+        gap: 0;
+        grid-template-rows: minmax(0, 1fr);
+      }
+
+      .main-grid.mobile-detail-open > .col-wrapper:first-of-type,
+      .main-grid.mobile-detail-open > .col-wrapper:nth-of-type(3),
+      .main-grid.mobile-detail-open > .sheet-backdrop {
+        display: none !important;
+      }
+
+      .main-grid.mobile-detail-open #infoPanel {
+        display: flex !important;
+        position: absolute;
+        inset: 0 0 calc(var(--mobile-nav-h) + env(safe-area-inset-bottom)) 0;
+        width: auto;
+        height: auto;
+        max-height: none;
+        margin: 0;
+        z-index: 20;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        transform: none !important;
+        overflow: hidden;
+      }
+
+      /* Backup jika class lama is-open masih tersisa. */
+      #infoPanel.is-open {
+        transform: none !important;
+      }
+
+      .sheet-backdrop {
+        display: none !important;
+      }
+
+      #infoPanel .col-body {
+        min-height: 0;
+        overflow: hidden;
+        padding: 16px 14px 10px;
+      }
+
+      #infoPanelHeader {
+        padding: 14px 14px 0 !important;
+        gap: 8px !important;
+        min-height: 0 !important;
+      }
+
+      #infoPanelHeader .editor-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+        gap: 8px;
+      }
+
+      #infoPanelHeader .editor-title {
+        font-size: clamp(20px, 6vw, 26px) !important;
+        line-height: 1.15;
+        overflow-wrap: anywhere;
+      }
+
+      #infoPanelHeader .editor-qty-wrapper {
+        font-size: 18px;
+      }
+
+      .info-detail-view {
+        width: 100%;
+        min-width: 0;
+        padding-inline: 0;
+      }
+
+      .action-row {
+        gap: 8px;
+        margin-top: 6px;
+        margin-bottom: 12px;
+        padding-bottom: 12px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .action-row > * {
+        flex: 0 0 auto;
+      }
+
+      .desc-subtask-grid {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 12px;
+        min-height: 0;
+        margin-bottom: 0;
+      }
+
+      .desc-subtask-grid > div {
+        min-height: 0;
+      }
+
+      .scroll-area-y {
+        min-height: 0;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+      }
+
+      .subtask-card {
+        min-height: 44px;
+      }
+
+      .btn-del-subtask {
+        opacity: 1;
+        visibility: visible;
+        min-width: 32px;
+        min-height: 32px;
+      }
+
+      .info-footer, .col-footer {
+        padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+      }
+
+      .col-footer .btn-primary-full {
+        width: 100%;
+        min-height: 44px;
+        padding-inline: 16px;
+      }
+
+      .fab {
+        position: absolute;
+        right: 16px;
+        bottom: 16px;
+        width: 52px;
+        height: 52px;
+        z-index: 5;
+      }
+
+      .modal-overlay {
+        align-items: flex-end;
+        padding: 10px;
+        padding-bottom: calc(10px + env(safe-area-inset-bottom));
+      }
+
+      .modal-panel {
+        width: 100%;
+        max-width: none;
+        max-height: min(90dvh, 720px);
+        border-radius: 20px;
+        padding: 18px;
+      }
+
+      .modal-actions {
+        position: sticky;
+        bottom: 0;
+        margin-inline: -2px;
+        padding-top: 10px;
+        background: var(--bg-card);
+      }
+
+      .modal-actions .btn {
+        flex: 1 1 0;
+        min-height: 44px;
+      }
+
+      .app-launcher-menu {
+        top: calc(100% + 8px);
+        right: 0;
+        width: min(280px, calc(100vw - 24px));
+        max-height: calc(100dvh - var(--header-h) - 16px);
+        overflow: auto;
+      }
+
+      .app-launcher-menu.is-expanded {
+        position: fixed;
+        top: max(8px, env(safe-area-inset-top));
+        right: max(8px, env(safe-area-inset-right));
+        bottom: max(8px, env(safe-area-inset-bottom));
+        left: max(8px, env(safe-area-inset-left));
+        width: auto;
+        height: auto;
+        max-height: none;
+        border-radius: 20px;
+        padding: 0;
+      }
+
+      .app-launcher-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px 10px;
+      }
+
+      .app-icon-box {
+        width: 48px;
+        height: 48px;
+      }
+
+      .preview-container {
+        width: 100%;
+        height: 100%;
+        max-height: 100dvh;
+        border-radius: 0;
+      }
+
+      .preview-close {
+        top: max(12px, env(safe-area-inset-top));
+        right: max(12px, env(safe-area-inset-right));
+      }
+    }
+
+    @media (max-width: 380px) {
+      #infoPanelHeader .editor-row {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      #infoPanelHeader .editor-qty-wrapper {
+        justify-self: start;
+      }
+
+      .main-grid, .home-layout {
+        padding: 8px;
+        gap: 8px;
+      }
+
+      #infoPanel .col-body {
+        padding-inline: 10px;
+      }
+
+      #infoPanelHeader {
+        padding-inline: 10px !important;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+      }
+    }
+
+    .btn-action:focus-visible, .btn:focus-visible, .nav-item:focus-visible,
+    .subtask-checkbox:focus-visible, .clean-input:focus-visible, .subtask-input:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
     }
 
     /* ICONS SETUP */
@@ -1002,6 +1418,7 @@
           item.active = true;
           saveData();
           renderList();
+          if (window.innerWidth <= 991) populateInfoPanel(item, true);
         };
         
         const imgWrap = document.createElement('div');
@@ -1112,13 +1529,14 @@
       renderMedia(item);
 
       if (isUserClick && window.innerWidth <= 991) {
+        mainGrid.classList.add('mobile-detail-open');
         infoPanel.classList.add('is-open');
-        sheetBackdrop.classList.add('is-open');
       }
     }
 
     function closeInfoPanel() {
       infoPanel.classList.remove('is-open');
+      mainGrid.classList.remove('mobile-detail-open');
       sheetBackdrop.classList.remove('is-open');
       infoPanelHeader.style.display = 'none';
       infoFooter.style.display = 'none';
