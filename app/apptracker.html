@@ -1,1 +1,321 @@
-:root{--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px)}html,body{width:100%;min-width:0;max-width:100%;height:100%;height:100dvh;min-height:0;overflow:hidden}body{align-items:stretch}.header{height:calc(62px + var(--safe-top));min-height:calc(62px + var(--safe-top));padding:var(--safe-top) max(12px,env(safe-area-inset-right)) 0 max(12px,env(safe-area-inset-left))}.header-date{max-width:100%;overflow-wrap:anywhere;font-size:clamp(12px,3.6vw,14px)}.footer{height:auto;min-height:calc(48px + var(--safe-bottom));padding:7px max(10px,env(safe-area-inset-right)) calc(7px + var(--safe-bottom)) max(10px,env(safe-area-inset-left))}.footer-countdown{width:100%;max-width:100%;min-width:0;flex-wrap:wrap;gap:4px 7px;line-height:1.25;font-size:clamp(11px,3.1vw,13px)}.next-target{min-width:0;max-width:38%}.main-content{width:100%;max-width:560px;min-width:0;height:100%;height:100dvh;min-height:0;margin-inline:auto;padding:calc(74px + var(--safe-top)) clamp(10px,4vw,18px) calc(60px + var(--safe-bottom));gap:clamp(9px,2.5vw,12px)}.top-summary{flex:0 0 auto;line-height:1.4;overflow-wrap:anywhere}.card{min-width:0;padding:clamp(16px,5vw,30px) clamp(14px,5vw,24px);border-radius:clamp(18px,6vw,24px)}.card-head{min-width:0;gap:8px;margin-bottom:clamp(14px,4vw,22px)}.label-title{min-width:0;font-size:clamp(16px,4.7vw,21px)}.process-badge{max-width:46%;font-size:clamp(10px,2.8vw,11px);padding:4px 7px}.progress-info{gap:8px;font-size:clamp(11px,3.2vw,12.5px)}.progress-center{flex:0 0 auto}.schedule-container{flex:1 1 0;min-height:0;min-width:0;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-bottom:8px}.schedule-list{min-width:0;gap:8px}.schedule-item{width:100%;min-width:0;min-height:44px;padding:9px clamp(9px,3.5vw,14px);overflow:hidden}.card-inner{min-width:0;min-height:25px}.card-front,.card-back{min-width:0}.card-front{gap:0}.schedule-time{flex:0 0 auto;font-size:clamp(11px,3.3vw,12.5px);padding:3px 6px}.schedule-name{min-width:0;overflow-wrap:anywhere;padding-left:clamp(8px,3vw,12px);font-size:clamp(12px,3.5vw,13px)}.card-back{gap:8px}.back-sub{min-width:0;text-align:right}.modal-overlay{padding:var(--safe-top) 0 var(--safe-bottom);align-items:stretch}.modal-window{width:min(100%,600px);min-width:0;height:100%;height:100dvh;max-height:100%;max-height:100dvh;margin-inline:auto;border-radius:0;overflow:hidden}.modal-header{flex:0 0 auto;min-height:60px;height:auto;padding:8px max(12px,env(safe-area-inset-right)) 8px max(12px,env(safe-area-inset-left));gap:8px}.modal-header h3{min-width:0;font-size:clamp(15px,4.2vw,18px);text-align:center;overflow-wrap:anywhere}.modal-back-btn{flex:0 0 auto;padding:6px 4px;font-size:clamp(12px,3.5vw,14px)}.modal-header>div:last-child{flex:0 1 70px;min-width:0}.modal-body{flex:1 1 0;min-height:0;min-width:0;padding:clamp(12px,4vw,20px);overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}.form-card{min-width:0;padding:clamp(12px,4vw,16px)}.form-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(8px,3vw,12px)}.input-group{min-width:0}.form-input{min-width:0;max-width:100%;font-size:16px}.form-card>div:last-child{flex-wrap:wrap}.form-card .btn{max-width:100%}.editor-list{min-width:0}.editor-row{min-width:0;padding:9px clamp(8px,3vw,12px);gap:8px}.editor-row-info{min-width:0;gap:7px}.editor-row-info>span:first-child{flex:0 0 auto;max-width:45%;white-space:normal;overflow-wrap:anywhere;line-height:1.25}.editor-row-title{min-width:0;white-space:normal;overflow-wrap:anywhere;line-height:1.25}.editor-row-actions{flex:0 0 auto;gap:5px}.editor-row-actions .btn{min-height:34px;padding:6px 9px}.complete-modal{padding:max(16px,var(--safe-top)) 16px max(16px,var(--safe-bottom))}.complete-card{max-height:100%;overflow-y:auto;padding:clamp(24px,7vw,40px) clamp(18px,6vw,24px)}@media(min-width:641px){.modal-overlay{padding:20px;align-items:center}.modal-window{width:min(100%,600px);height:auto;max-height:min(90dvh,900px);border-radius:24px}.modal-header{padding:14px 20px}.modal-body{flex:1 1 auto}}@media(max-width:360px){.main-content{padding-left:9px;padding-right:9px}.card-head{flex-wrap:wrap}.label-title{flex-basis:100%}.process-badge{max-width:100%}.form-row{grid-template-columns:minmax(0,1fr)}.editor-row{flex-wrap:wrap}.editor-row-info{flex:1 1 100%}.editor-row-actions{width:100%;justify-content:flex-end}.next-target{max-width:100%}}@media(max-height:600px){.main-content{gap:8px;padding-top:calc(68px + var(--safe-top));padding-bottom:calc(56px + var(--safe-bottom))}.card{padding-top:14px;padding-bottom:14px}.card-head{margin-bottom:12px}}
+<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Jadwal Kegiatan & Progress</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0;font-family:'Plus Jakarta Sans',sans-serif}html,body{background:#fff;color:#0f172a;height:100vh;height:100dvh;width:100vw;overflow:hidden;display:flex;flex-direction:column;align-items:center}.header{position:fixed;top:0;left:0;width:100%;height:62px;background:#fff;padding:0 16px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:center;align-items:center;z-index:100}.header-date{font-size:14px;font-weight:700;color:#0f172a;letter-spacing:-0.2px;text-align:center}.footer{position:fixed;bottom:0;left:0;width:100%;height:48px;background:#fff;border-top:1px solid #e2e8f0;display:flex;justify-content:center;align-items:center;z-index:100;padding:0 16px}.footer-countdown{display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;font-weight:600;color:#475569;text-align:center;max-width:90%}.solid-badge{background:#2563eb;color:#fff;font-weight:800;font-size:12px;padding:3px 9px;border-radius:8px;letter-spacing:0.3px;white-space:nowrap;flex-shrink:0}.next-target{font-weight:700;color:#0f172a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.main-content{width:100%;max-width:480px;height:100%;padding:74px 16px 58px 16px;display:flex;flex-direction:column;gap:12px;overflow:hidden;background:#fff}.top-summary{font-size:12px;font-weight:700;color:#64748b;letter-spacing:-0.2px;text-align:center;width:100%}.top-summary .time-hl{color:#2563eb;font-weight:800}.card{background:#fff;border:1px solid #e2e8f0;border-radius:24px;padding:2rem 1.4rem;width:100%;flex-shrink:0;box-shadow:0 12px 35px -12px rgba(0,0,0,0.05);display:flex;flex-direction:column;justify-content:center;cursor:pointer;-webkit-user-select:none;user-select:none;transition:transform .15s ease}.card:active{transform:scale(0.99)}.card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:1.4rem}.label-title{font-size:1.25rem;font-weight:800;color:#0f172a;letter-spacing:-0.4px;line-height:1.25;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}.process-badge{border:1px solid #2563eb;background:transparent;color:#2563eb;font-size:11px;font-weight:700;padding:4px 9px;border-radius:8px;white-space:nowrap;flex-shrink:0}.progress-wrapper{width:100%}.progress-track{background:#f1f5f9;height:7px;border-radius:999px;overflow:hidden;width:100%;position:relative}.progress-bar{background:#2563eb;height:100%;width:0%;border-radius:999px;transition:width .1s linear;position:relative;overflow:hidden}.progress-bar::after{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.85),transparent);animation:whiteStream 15s infinite ease-in-out}.progress-info{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:12.5px;font-weight:700;color:#94a3b8;font-variant-numeric:tabular-nums}.progress-center{color:#2563eb;font-weight:800;font-size:13px}.schedule-container{flex:1;min-height:0;overflow-y:auto;background:#fff;padding-bottom:12px;scrollbar-width:none;scroll-behavior:smooth}.schedule-container::-webkit-scrollbar{display:none}.schedule-list{display:flex;flex-direction:column;gap:8px;width:100%}.schedule-item{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:8px 14px;cursor:pointer;perspective:1000px;min-height:42px;box-shadow:0 4px 12px rgba(15,23,42,0.02);user-select:none}.schedule-item.pop-trigger{animation:simplePop .3s ease forwards}.schedule-item.current{border-color:#3b82f6;background:#eff6ff;box-shadow:0 6px 20px rgba(37,99,235,0.08)}.card-inner{position:relative;width:100%;height:100%;min-height:26px;transition:transform .4s ease;transform-style:preserve-3d;display:flex;align-items:center}.schedule-item.flipped .card-inner{transform:rotateY(180deg)}.card-front,.card-back{position:absolute;width:100%;height:100%;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;align-items:center;top:0;left:0}.card-front{justify-content:flex-start;z-index:2}.card-back{transform:rotateY(180deg);justify-content:space-between;align-items:center;color:#2563eb;z-index:1;padding:0 4px}.back-pill{background:#dbeafe;color:#1d4ed8;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px}.back-sub{font-size:11.5px;font-weight:700;color:#64748b}.schedule-time{font-size:12.5px;font-weight:700;color:#2563eb;background:#f1f5f9;padding:2px 7px;border-radius:6px;font-variant-numeric:tabular-nums}.schedule-name{font-size:13px;font-weight:600;text-align:left;flex:1;padding-left:12px;letter-spacing:-0.2px;line-height:1.2;color:#1e293b}.past{border:1px solid #cbd5e1!important;background:#fff!important;box-shadow:none!important}.past .card-front{opacity:.45}.past .card-front .schedule-name{text-decoration:line-through;color:#94a3b8}.past .schedule-time{background:#fff;border:1px solid #e2e8f0;color:#94a3b8}.past .back-pill{background:#fff;border:1px solid #e2e8f0;color:#94a3b8}.past .back-sub{color:#cbd5e1}@keyframes whiteStream{0%{left:-100%}10%{left:100%}100%{left:100%}}@keyframes simplePop{0%{transform:scale(1)}50%{transform:scale(1.025)}100%{transform:scale(1)}}.modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,0.45);backdrop-filter:blur(4px);z-index:2000;display:none;align-items:center;justify-content:center;padding:16px}.modal-overlay.active{display:flex}.modal-window{background:#fff;width:100%;max-width:540px;border-radius:24px;border:1px solid #e2e8f0;box-shadow:0 24px 50px -12px rgba(15,23,42,0.18);display:flex;flex-direction:column;max-height:88vh;overflow:hidden;animation:modalIn .25s ease-out}.modal-header{padding:16px 20px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;background:#fff;gap:12px}.modal-header h3{font-size:1.1rem;font-weight:800;color:#0f172a}.modal-back-btn{display:flex;align-items:center;gap:6px;background:none;border:none;color:#2563eb;font-weight:700;font-size:14px;cursor:pointer;padding:6px 10px;border-radius:10px}.modal-back-btn:hover{background:#eff6ff}.modal-body{padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:16px;background:#fff}.form-card{background:#fff;border:1px solid #e2e8f0;padding:16px;border-radius:16px;display:flex;flex-direction:column;gap:12px}.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.input-group{display:flex;flex-direction:column;gap:4px;text-align:left}.input-group label{font-size:11.5px;font-weight:700;color:#64748b;text-transform:uppercase}.form-input{width:100%;border:1px solid #cbd5e1;background:#fff;padding:9px 12px;border-radius:10px;font-size:13.5px;font-weight:600;color:#0f172a;outline:none}.form-input:focus{border-color:#2563eb;ring:2px #93c5fd}.btn{border:none;outline:none;border-radius:10px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:all .15s ease}.btn-primary{background:#2563eb;color:#fff}.btn-primary:hover{background:#1d4ed8}.btn-secondary{background:#f1f5f9;color:#334155}.btn-secondary:hover{background:#e2e8f0}.btn-danger{background:#fee2e2;color:#b91c1c;padding:6px 10px;border-radius:8px;font-size:12px}.btn-danger:hover{background:#fecaca}.btn-edit{background:#eff6ff;color:#2563eb;padding:6px 10px;border-radius:8px;font-size:12px}.btn-edit:hover{background:#dbeafe}.editor-list{display:flex;flex-direction:column;gap:8px}.editor-row{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid #e2e8f0;padding:10px 12px;border-radius:12px;gap:10px}.editor-row-info{display:flex;align-items:center;gap:10px;overflow:hidden;flex:1}.editor-row-title{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.editor-row-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}@media(max-width:640px){.modal-overlay{padding:0}.modal-window{width:100vw;height:100vh;height:100dvh;max-height:100dvh;border-radius:0;border:none}.modal-header{height:60px;padding:0 16px}.modal-body{padding:16px;flex:1}}.complete-modal{position:fixed;top:0;left:0;width:100vw;height:100vh;height:100dvh;background:rgba(255,255,255,0.75);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);z-index:9999;display:none;align-items:center;justify-content:center}.complete-modal.active{display:flex}.complete-card{background:#fff;padding:40px 24px;border-radius:32px;text-align:center;box-shadow:0 30px 60px -15px rgba(37,99,235,0.25);border:1px solid #e2e8f0;max-width:340px;width:90%;transform:scale(0);animation:popCenter .6s cubic-bezier(0.34,1.56,0.64,1) forwards}.complete-icon{font-size:72px;margin-bottom:16px;animation:floatBounce 2.5s ease-in-out infinite;text-shadow:0 10px 20px rgba(0,0,0,0.1)}.complete-title{font-size:1.6rem;font-weight:800;color:#0f172a;margin-bottom:10px;letter-spacing:-0.5px}.complete-desc{color:#64748b;font-size:13.5px;font-weight:600;line-height:1.5;margin-bottom:28px}@keyframes popCenter{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}@keyframes floatBounce{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-15px) scale(1.05)}}
+/* ===== Responsive layout patch ===== */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+html {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+body {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  height: 100%;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  align-items: stretch;
+}
+.header {
+  height: calc(62px + var(--safe-top));
+  min-height: calc(62px + var(--safe-top));
+  padding: var(--safe-top) max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left));
+}
+.header-date {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-size: clamp(12px, 3.6vw, 14px);
+}
+.footer {
+  min-height: calc(48px + var(--safe-bottom));
+  height: auto;
+  padding: 7px max(10px, env(safe-area-inset-right)) calc(7px + var(--safe-bottom)) max(10px, env(safe-area-inset-left));
+}
+.footer-countdown {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 4px 7px;
+  line-height: 1.25;
+  font-size: clamp(11px, 3.1vw, 13px);
+}
+.next-target {
+  min-width: 0;
+  max-width: 38%;
+}
+.main-content {
+  width: 100%;
+  max-width: 560px;
+  min-width: 0;
+  height: 100%;
+  height: 100dvh;
+  min-height: 0;
+  margin-inline: auto;
+  padding:
+    calc(74px + var(--safe-top))
+    clamp(10px, 4vw, 18px)
+    calc(60px + var(--safe-bottom));
+  overflow: hidden;
+  gap: clamp(9px, 2.5vw, 12px);
+}
+.top-summary {
+  flex: 0 0 auto;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.card {
+  min-width: 0;
+  padding: clamp(16px, 5vw, 30px) clamp(14px, 5vw, 24px);
+  border-radius: clamp(18px, 6vw, 24px);
+}
+.card-head {
+  min-width: 0;
+  gap: 8px;
+  margin-bottom: clamp(14px, 4vw, 22px);
+}
+.label-title {
+  min-width: 0;
+  font-size: clamp(16px, 4.7vw, 21px);
+}
+.process-badge {
+  max-width: 46%;
+  font-size: clamp(10px, 2.8vw, 11px);
+  padding: 4px 7px;
+}
+.progress-info {
+  gap: 8px;
+  font-size: clamp(11px, 3.2vw, 12.5px);
+}
+.progress-center {
+  flex: 0 0 auto;
+}
+.schedule-container {
+  flex: 1 1 0;
+  min-height: 0;
+  min-width: 0;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 8px;
+}
+.schedule-list {
+  min-width: 0;
+  gap: 8px;
+}
+.schedule-item {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 9px clamp(9px, 3.5vw, 14px);
+  overflow: hidden;
+}
+.card-inner {
+  min-width: 0;
+  min-height: 25px;
+}
+.card-front {
+  min-width: 0;
+  gap: 0;
+}
+.schedule-time {
+  flex: 0 0 auto;
+  font-size: clamp(11px, 3.3vw, 12.5px);
+  padding: 3px 6px;
+}
+.schedule-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  padding-left: clamp(8px, 3vw, 12px);
+  font-size: clamp(12px, 3.5vw, 13px);
+}
+.card-back {
+  min-width: 0;
+  gap: 8px;
+}
+.back-sub {
+  min-width: 0;
+  text-align: right;
+}
+.modal-overlay {
+  padding: 0;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  align-items: stretch;
+}
+.modal-window {
+  width: min(100%, 600px);
+  min-width: 0;
+  height: 100%;
+  height: 100dvh;
+  max-height: 100%;
+  max-height: 100dvh;
+  margin-inline: auto;
+  border-radius: 0;
+  overflow: hidden;
+}
+.modal-header {
+  flex: 0 0 auto;
+  min-height: 60px;
+  height: auto;
+  padding: 8px max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left));
+  gap: 8px;
+}
+.modal-header h3 {
+  min-width: 0;
+  font-size: clamp(15px, 4.2vw, 18px);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.modal-back-btn {
+  flex: 0 0 auto;
+  padding: 6px 4px;
+  font-size: clamp(12px, 3.5vw, 14px);
+}
+.modal-header > div:last-child {
+  flex: 0 1 70px;
+  min-width: 0;
+}
+.modal-body {
+  flex: 1 1 0;
+  min-height: 0;
+  min-width: 0;
+  padding: clamp(12px, 4vw, 20px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.form-card {
+  min-width: 0;
+  padding: clamp(12px, 4vw, 16px);
+}
+.form-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(8px, 3vw, 12px);
+}
+.input-group {
+  min-width: 0;
+}
+.form-input {
+  min-width: 0;
+  max-width: 100%;
+  font-size: 16px; /* prevents iOS focus zoom */
+}
+.form-card > div:last-child {
+  flex-wrap: wrap;
+}
+.form-card .btn {
+  max-width: 100%;
+}
+.editor-list {
+  min-width: 0;
+}
+.editor-row {
+  min-width: 0;
+  padding: 9px clamp(8px, 3vw, 12px);
+  gap: 8px;
+}
+.editor-row-info {
+  min-width: 0;
+  gap: 7px;
+}
+.editor-row-info > span:first-child {
+  flex: 0 0 auto;
+  max-width: 45%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+}
+.editor-row-title {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+}
+.editor-row-actions {
+  flex: 0 0 auto;
+  gap: 5px;
+}
+.editor-row-actions .btn {
+  min-height: 34px;
+  padding: 6px 9px;
+}
+.complete-modal {
+  padding: max(16px, var(--safe-top)) 16px max(16px, var(--safe-bottom));
+}
+.complete-card {
+  max-height: 100%;
+  overflow-y: auto;
+  padding: clamp(24px, 7vw, 40px) clamp(18px, 6vw, 24px);
+}
+@media (min-width: 641px) {
+  .modal-overlay {
+    padding: 20px;
+    align-items: center;
+  }
+  .modal-window {
+    width: min(100%, 600px);
+    height: auto;
+    max-height: min(90dvh, 900px);
+    border-radius: 24px;
+  }
+  .modal-header {
+    padding: 14px 20px;
+  }
+  .modal-body {
+    flex: 1 1 auto;
+  }
+}
+@media (max-width: 360px) {
+  .main-content {
+    padding-left: 9px;
+    padding-right: 9px;
+  }
+  .card-head {
+    flex-wrap: wrap;
+  }
+  .label-title {
+    flex-basis: 100%;
+  }
+  .process-badge {
+    max-width: 100%;
+  }
+  .form-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .editor-row {
+    flex-wrap: wrap;
+  }
+  .editor-row-info {
+    flex: 1 1 100%;
+  }
+  .editor-row-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .next-target {
+    max-width: 100%;
+  }
+}
+@media (max-height: 600px) {
+  .main-content {
+    gap: 8px;
+    padding-top: calc(68px + var(--safe-top));
+    padding-bottom: calc(56px + var(--safe-bottom));
+  }
+  .card {
+    padding-top: 14px;
+    padding-bottom: 14px;
+  }
+  .card-head {
+    margin-bottom: 12px;
+  }
+}
+
+</style></head><body><header class="header"><div id="headerDate" class="header-date">Memuat tanggal...</div></header><div class="main-content"><div id="topSummary" class="top-summary">Progres 0/0 diselesaikan selama <span class="time-hl">0 jam 0 menit</span></div><div class="card" id="progressCard" title="Klik kanan atau tahan lama untuk mengedit"><div class="card-head"><div id="labelTitle" class="label-title">Memuat...</div><span id="labelProcess" class="process-badge">proses - menit</span></div><div class="progress-wrapper"><div class="progress-track"><div id="progressBar" class="progress-bar"></div></div><div class="progress-info"><span id="startTimeText">21:30</span><span id="progressText" class="progress-center">00.00%</span><span id="endTimeText">22:00</span></div></div></div><div class="schedule-container" id="scheduleContainer"><div id="scheduleList" class="schedule-list"></div></div></div><footer class="footer"><div id="footerCountdown" class="footer-countdown"><span>Menghubungkan...</span></div></footer><div id="editorModal" class="modal-overlay"><div class="modal-window"><div class="modal-header"><button class="modal-back-btn" onclick="closeEditor()">← Kembali</button><h3>Editor Schedule</h3><div style="width:70px"></div></div><div class="modal-body"><form class="form-card" onsubmit="handleFormSubmit(event)"><input type="hidden" id="editIndex" value="-1"><div class="form-row"><div class="input-group"><label>Mulai</label><input type="time" step="1" id="inputStart" class="form-input" required></div><div class="input-group"><label>Selesai</label><input type="time" step="1" id="inputEnd" class="form-input" required></div></div><div class="input-group"><label>Nama Kegiatan</label><input type="text" id="inputTitle" class="form-input" placeholder="Contoh: Baca Buku" required></div><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;"><button type="button" id="btnCancelEdit" class="btn btn-secondary" style="display:none;" onclick="resetForm()">Batal</button><button type="submit" id="btnSubmitForm" class="btn btn-primary">+ Tambah Jadwal</button></div></form><div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;">Daftar Agenda (<span id="totalItemsCount">0</span>)</span><button type="button" class="btn btn-secondary" style="padding:4px 8px;font-size:11px;" onclick="resetToDefault()">Reset Standar</button></div><div id="editorList" class="editor-list"></div></div></div></div><div id="completionModal" class="complete-modal"><div class="complete-card"><div class="complete-icon">✨🏆✨</div><h2 class="complete-title">Kerja Bagus!</h2><p class="complete-desc">Seluruh pekerjaan hari ini telah selesai dengan sukses. Waktunya beristirahat.</p><button class="btn btn-primary" style="width:100%;padding:14px;font-size:14px;border-radius:14px;" onclick="document.getElementById('completionModal').classList.remove('active')">Tutup Penjelasan</button></div></div><script>const DEFAULT_SCHEDULE=[{start:"21:30:00",end:"21:32:00",title:"Pemberesan Akhir Ruangan"},{start:"21:32:00",end:"21:34:00",title:"Pengecekan Jendela & Pintu"},{start:"21:34:00",end:"21:36:00",title:"Mematikan Lampu Utama"},{start:"21:36:00",end:"21:38:00",title:"Penyusunan Jadwal Besok"},{start:"21:38:00",end:"21:40:00",title:"Peregangan Otot Ringan"},{start:"21:40:00",end:"21:42:00",title:"Minum Segelas Air Putih"},{start:"21:42:00",end:"21:44:00",title:"Pembersihan Wajah & Gigi"},{start:"21:44:00",end:"21:46:00",title:"Mengganti Pakaian Tidur"},{start:"21:46:00",end:"21:48:00",title:"Pengaturan Alarm Perangkat"},{start:"21:48:00",end:"21:50:00",title:"Mode Hening Ponsel"},{start:"21:50:00",end:"21:52:00",title:"Doa & Syukur Harian"},{start:"21:52:00",end:"21:54:00",title:"Meditasi Pernafasan Pendek"},{start:"21:54:00",end:"21:56:00",title:"Pengaturan Posisi Tidur"},{start:"21:56:00",end:"21:58:00",title:"Relaksasi Pikiran Total"},{start:"21:58:00",end:"22:00:00",title:"Memasuki Waktu Istirahat"}];let schedule=[];let flippedIndex=null;let lastActiveIndex=null;let pressTimer=null;let isCompletedNotified=false;document.body.addEventListener('click',()=>{if("Notification"in window&&Notification.permission==="default")Notification.requestPermission();},{once:true});function loadSchedule(){try{const d=localStorage.getItem("clean_modern_schedule");schedule=d?JSON.parse(d):JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));}catch(e){schedule=JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));}}function saveSchedule(){schedule.sort((a,b)=>timeToSeconds(a.start)-timeToSeconds(b.start));localStorage.setItem("clean_modern_schedule",JSON.stringify(schedule));lastActiveIndex=null;isCompletedNotified=false;buildScheduleDOM();renderEditorList();}function timeToSeconds(t){if(!t)return 0;const p=t.split(":");return parseInt(p[0]||0)*3600+parseInt(p[1]||0)*60+parseInt(p[2]||0);}function formatTimeField(t){if(!t)return"00:00:00";const p=t.split(":");while(p.length<3)p.push("00");return p.map(n=>n.padStart(2,"0")).join(":");}function getCurSecs(){const now=new Date();const p=new Intl.DateTimeFormat("en-US",{timeZone:"Asia/Jakarta",hour12:false,hour:"numeric",minute:"numeric",second:"numeric"}).formatToParts(now);let h=0,m=0,s=0;p.forEach(x=>{if(x.type==='hour')h=parseInt(x.value);if(x.type==='minute')m=parseInt(x.value);if(x.type==='second')s=parseInt(x.value);});return h*3600+m*60+s+now.getMilliseconds()/1000;}function openEditor(){document.getElementById("editorModal").classList.add("active");document.body.style.overflow="hidden";resetForm();renderEditorList();}function closeEditor(){document.getElementById("editorModal").classList.remove("active");document.body.style.overflow="hidden";}function resetToDefault(){if(confirm("Kembalikan agenda ke jadwal default?")){schedule=JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));saveSchedule();}}function handleCardFlip(idx){const div=document.getElementById(`item-${idx}`);if(!div)return;div.classList.remove("pop-trigger");void div.offsetWidth;div.classList.add("pop-trigger");flippedIndex=(flippedIndex===idx)?null:idx;renderCardStates();setTimeout(()=>div.classList.remove("pop-trigger"),300);}function buildScheduleDOM(){const list=document.getElementById("scheduleList");list.innerHTML="";schedule.forEach((_,idx)=>{const div=document.createElement("div");div.id=`item-${idx}`;div.onclick=()=>handleCardFlip(idx);list.appendChild(div);});renderCardStates();}function triggerCompletion(){if(!isCompletedNotified){isCompletedNotified=true;document.getElementById('completionModal').classList.add('active');if("Notification"in window&&Notification.permission==="granted"){new Notification("Pekerjaan Selesai! ✨",{body:"Seluruh agenda hari ini telah tuntas.",icon:"https://cdn-icons-png.flaticon.com/512/190/190411.png"});}}}function updateApp(){const now=new Date();document.getElementById("headerDate").textContent=new Intl.DateTimeFormat("id-ID",{timeZone:"Asia/Jakarta",weekday:"long",day:"numeric",month:"long",year:"numeric"}).format(now);if(!schedule.length){document.getElementById("labelTitle").textContent="Tidak ada jadwal";document.getElementById("labelProcess").textContent="proses 0 menit";document.getElementById("progressBar").style.width="0%";document.getElementById("footerCountdown").innerHTML="<span>Jadwal kosong</span>";document.getElementById("topSummary").innerHTML="Progres 0/0 diselesaikan selama <span class='time-hl'>0 jam 0 menit</span>";return;}const currentSeconds=getCurSecs();let activeItem=schedule[0];let activeIndex=0;let nextItem=null;let completedCount=0;let completedDurationSec=0;for(let i=0;i<schedule.length;i++){const startSec=timeToSeconds(schedule[i].start);const endSec=timeToSeconds(schedule[i].end);if(currentSeconds>=endSec){completedCount++;completedDurationSec+=(endSec-startSec);}if(currentSeconds>=startSec&&currentSeconds<endSec){activeItem=schedule[i];activeIndex=i;nextItem=schedule[i+1]||null;break;}if(currentSeconds<startSec&&!nextItem){nextItem=schedule[i];}}if(!nextItem&&currentSeconds<timeToSeconds(schedule[0].start)){nextItem=schedule[0];}const totalCompHours=Math.floor(completedDurationSec/3600);const totalCompMins=Math.round((completedDurationSec%3600)/60);document.getElementById("topSummary").innerHTML=`Progres ${completedCount}/${schedule.length} diselesaikan selama <span class="time-hl">${totalCompHours} jam ${totalCompMins} menit</span>`;const countdownEl=document.getElementById("footerCountdown");if(nextItem){const diffMin=Math.ceil(Math.max(0,timeToSeconds(nextItem.start)-currentSeconds)/60);countdownEl.innerHTML=`<span class="solid-badge">${diffMin} menit</span><span>menuju jam ${nextItem.start.slice(0,5)}</span><span class="next-target" title="${nextItem.title}">${nextItem.title}</span>`;isCompletedNotified=false;}else{const lastEndSec=timeToSeconds(schedule[schedule.length-1].end);const diffMin=Math.max(0,Math.ceil((lastEndSec-currentSeconds)/60));countdownEl.innerHTML=`<span>Agenda terakhir, berakhir dalam</span><span class="solid-badge" ${diffMin===0?'style="background:#10b981;"':''}>${diffMin} menit</span>`;if(diffMin===0){triggerCompletion();}}if(currentSeconds>=timeToSeconds(schedule[schedule.length-1].end)){activeItem=schedule[schedule.length-1];activeIndex=schedule.length-1;}const startSec=timeToSeconds(activeItem.start);const totalDuration=Math.max(timeToSeconds(activeItem.end)-startSec,1);const percentage=Math.min(Math.max(((currentSeconds-startSec)/totalDuration)*100,0),100);document.getElementById("labelTitle").textContent=activeItem.title;document.getElementById("labelProcess").textContent=`proses ${Math.max(1,Math.round(totalDuration/60))} menit`;document.getElementById("startTimeText").textContent=activeItem.start.slice(0,5);document.getElementById("endTimeText").textContent=activeItem.end.slice(0,5);document.getElementById("progressBar").style.width=percentage.toFixed(4)+"%";document.getElementById("progressText").textContent=percentage.toFixed(2)+"%";if(lastActiveIndex!==activeIndex){lastActiveIndex=activeIndex;const activeCardEl=document.getElementById(`item-${activeIndex}`);if(activeCardEl){activeCardEl.scrollIntoView({behavior:"smooth",block:"nearest"});}}renderCardStates();}function renderCardStates(){const currentSeconds=getCurSecs();schedule.forEach((item,idx)=>{const div=document.getElementById(`item-${idx}`);if(!div)return;const itemStart=timeToSeconds(item.start);const itemEnd=timeToSeconds(item.end);const durationMin=Math.max(1,Math.round((itemEnd-itemStart)/60));let statusClass="upcoming",subText="";if(currentSeconds>=itemEnd){statusClass="past";subText=`${Math.ceil((currentSeconds-itemEnd)/60)}m lalu`;}else if(currentSeconds>=itemStart&&currentSeconds<itemEnd){statusClass="current";subText=`Berlangsung`;}else{subText=`${Math.ceil((itemStart-currentSeconds)/60)}m lagi`;}div.className=`schedule-item ${statusClass} ${flippedIndex===idx?'flipped':''} ${div.classList.contains('pop-trigger')?'pop-trigger':''}`;div.innerHTML=`<div class="card-inner"><div class="card-front"><span class="schedule-time">${item.start.slice(0,5)}</span><span class="schedule-name">${item.title}</span></div><div class="card-back"><span class="back-pill">${durationMin} Menit</span><span class="back-sub">${subText}</span></div></div>`;});}function renderEditorList(){const container=document.getElementById("editorList");document.getElementById("totalItemsCount").textContent=schedule.length;container.innerHTML="";schedule.forEach((item,idx)=>{const row=document.createElement("div");row.className="editor-row";row.innerHTML=`<div class="editor-row-info"><span style="font-size:12px;font-weight:700;color:#2563eb;font-variant-numeric:tabular-nums;background:#fff;border:1px solid #e2e8f0;padding:2px 6px;border-radius:6px;">${item.start.slice(0,5)}-${item.end.slice(0,5)}</span><span class="editor-row-title">${item.title}</span></div><div class="editor-row-actions"><button type="button" class="btn btn-edit" onclick="editItem(${idx})">Edit</button><button type="button" class="btn btn-danger" onclick="deleteItem(${idx})">Hapus</button></div>`;container.appendChild(row);});}function editItem(idx){const item=schedule[idx];document.getElementById("editIndex").value=idx;document.getElementById("inputStart").value=item.start;document.getElementById("inputEnd").value=item.end;document.getElementById("inputTitle").value=item.title;document.getElementById("btnSubmitForm").textContent="Simpan Perubahan";document.getElementById("btnCancelEdit").style.display="inline-flex";}function deleteItem(idx){if(confirm(`Hapus agenda "${schedule[idx].title}"?`)){schedule.splice(idx,1);if(flippedIndex===idx)flippedIndex=null;saveSchedule();}}function resetForm(){document.getElementById("editIndex").value="-1";document.getElementById("inputStart").value="";document.getElementById("inputEnd").value="";document.getElementById("inputTitle").value="";document.getElementById("btnSubmitForm").textContent="+ Tambah Jadwal";document.getElementById("btnCancelEdit").style.display="none";}function handleFormSubmit(e){e.preventDefault();const idx=parseInt(document.getElementById("editIndex").value);const start=formatTimeField(document.getElementById("inputStart").value);const end=formatTimeField(document.getElementById("inputEnd").value);const title=document.getElementById("inputTitle").value.trim();if(timeToSeconds(end)<=timeToSeconds(start))return alert("Waktu selesai harus lebih besar dari waktu mulai.");const payload={start,end,title};if(idx>=0)schedule[idx]=payload;else schedule.push(payload);saveSchedule();resetForm();}const progressCard=document.getElementById("progressCard");progressCard.addEventListener("contextmenu",e=>{e.preventDefault();openEditor();});progressCard.addEventListener("touchstart",()=>{pressTimer=setTimeout(()=>{openEditor();navigator.vibrate&&navigator.vibrate(40);},500);},{passive:true});progressCard.addEventListener("touchend",()=>clearTimeout(pressTimer));progressCard.addEventListener("touchmove",()=>clearTimeout(pressTimer));loadSchedule();buildScheduleDOM();setInterval(updateApp,50);updateApp();</script></body></html>
