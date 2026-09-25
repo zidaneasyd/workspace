@@ -1,0 +1,1697 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Task Manager - Minimalist Workspace</title>
+  <style>
+    /* =========================================
+       1. VARIABLES & RESET
+       ========================================= */
+    :root {
+      --bg-body: #ffffff; 
+      --bg-card: #ffffff;
+      --bg-empty: #ffffff;
+      --primary: #2563eb;
+      --primary-glow: rgba(37, 99, 235, 0.1);
+      --primary-border: rgba(37, 99, 235, 0.4);
+      --success: #059669;
+      --text-main: #1f2937;
+      --text-muted: #6b7280;
+      --border-color: #d1d5db; 
+      --border-light: #f3f4f6; 
+      --border-medium: #e5e7eb;
+      --icon-color: #9ca3af;
+      --sidebar-w: 72px;
+      --header-h: 60px;
+      --mobile-nav-h: 64px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    
+    /* HILANGKAN SCROLLBAR GLOBAL */
+    * { scrollbar-width: none; -ms-overflow-style: none; }
+    *::-webkit-scrollbar { display: none; }
+
+    body {
+      background-color: var(--bg-body);
+      overflow: hidden; height: 100vh; width: 100vw;
+      color: var(--text-main);
+      transition: background 0.15s ease-in-out;
+    }
+
+    /* =========================================
+       TEMA LATAR BELAKANG (SOLID + BLUR CUSTOM)
+       ========================================= */
+    body.has-bg { background-color: #1f2937; }
+    body.has-bg .universal-header,
+    body.has-bg .sidebar {
+      background-color: var(--bg-card) !important;
+      backdrop-filter: none !important;
+      border-color: rgba(0, 0, 0, 0.05);
+    }
+    body.has-bg .col-wrapper {
+      background-color: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-color: rgba(255, 255, 255, 0.6);
+    }
+    body.has-bg .col-header, body.has-bg .col-footer {
+      background-color: transparent; border-color: rgba(255, 255, 255, 0.5);
+    }
+    body.has-bg .card, body.has-bg .subtask-card {
+      background-color: rgba(255, 255, 255, 0.97); border-color: rgba(255, 255, 255, 0.8);
+    }
+    body.has-bg .card:hover, body.has-bg .subtask-card:hover {
+      background-color: #ffffff; border-color: var(--primary-border);
+    }
+
+    /* =========================================
+       2. LAYOUT UTAMA (HEADER 100% & APP BODY)
+       ========================================= */
+    .app-wrapper { 
+      display: flex; flex-direction: column; height: 100vh; width: 100%; 
+      background-color: var(--bg-body);
+    }
+
+    /* HEADER UNIVERSAL Paling Atas */
+    .universal-header {
+      height: var(--header-h); background-color: var(--bg-card);
+      border-bottom: 1px solid var(--border-medium);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; flex-shrink: 0; z-index: 1000;
+    }
+    
+    .header-brand { display: flex; align-items: center; gap: 12px; font-size: 16px; font-weight: 700; color: var(--text-main); letter-spacing: -0.3px; }
+    
+    .app-body { display: flex; flex: 1; overflow: hidden; width: 100%; }
+
+    /* SIDEBAR MENU */
+    .sidebar {
+      width: var(--sidebar-w); background-color: var(--bg-card);
+      border-right: 1px solid var(--border-medium);
+      display: flex; flex-direction: column; align-items: center;
+      padding: 24px 0; gap: 12px; z-index: 500; flex-shrink: 0;
+    }
+    .nav-item {
+      width: 44px; height: 44px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--icon-color); cursor: pointer; transition: background-color 0.15s ease, color 0.15s ease;
+    }
+    .nav-item:hover { background-color: var(--border-light); color: var(--text-main); }
+    .nav-item.active { background-color: #eff6ff; color: var(--primary); }
+
+    /* KONTEN UTAMA (RUANG KERJA) */
+    .main-content { flex: 1; display: flex; flex-direction: column; height: 100%; overflow: hidden; position: relative; }
+
+    .main-grid { flex: 1; display: grid; grid-template-columns: 3fr 5fr 2fr; height: 100%; overflow: hidden; padding: 24px; gap: 24px; }
+    .home-layout { flex: 1; display: none; grid-template-columns: 7fr 3fr; height: 100%; overflow: hidden; padding: 24px; gap: 24px; }
+
+    /* KOLOM & PEMBATAS MINIMALIS */
+    .col-wrapper {
+      display: flex; flex-direction: column; height: 100%; 
+      background-color: var(--bg-card); position: relative;
+      border-radius: 16px; border: 1px solid var(--border-medium); overflow: hidden; 
+    }
+    .col-wrapper:last-child { background-color: var(--bg-card); border-style: dashed; }
+
+    .col-header {
+      background-color: transparent; padding: 0 24px; border-bottom: 1px solid var(--border-light);
+      font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0; z-index: 10; height: 60px; 
+    }
+    .col-body { flex: 1; overflow-y: auto; position: relative; padding: 24px 20px; }
+
+    /* =========================================
+       3. BUTTON STYLES
+       ========================================= */
+    .btn-action {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 0 16px; height: 36px; background: transparent;
+      border: 1px solid var(--border-medium); border-radius: 8px;
+      font-size: 13px; font-weight: 500; color: var(--text-main);
+      cursor: pointer; outline: none; white-space: nowrap;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+    .btn-action:hover { background: var(--border-light); border-color: var(--border-color); }
+    .btn-action svg { stroke: currentColor; stroke-width: 2; width: 14px; height: 14px; }
+    .btn-action.icon-only { padding: 0; width: 36px; }
+
+    .btn-action-sm { height: 30px; padding: 0 12px; font-size: 11px; }
+    .btn-action-sm svg { width: 12px; height: 12px; }
+    .btn-action-sm.icon-only { width: 30px; padding: 0; }
+    .btn-action-sm span { font-size: 11px !important; }
+
+    .status-group { display: flex; align-items: stretch; }
+    .status-group .btn-action { border-radius: 0; margin: 0; }
+    .status-group .btn-action:first-child { border-radius: 6px 0 0 6px; border-right: none; }
+    .status-group .btn-action:last-child { border-radius: 0 6px 6px 0; border-left: none; }
+    .status-group .btn-action:not(:first-child):not(:last-child) { border-left: 1px solid var(--border-medium); border-right: 1px solid var(--border-medium); }
+
+    .col-footer { display: flex; align-items: center; justify-content: flex-end; padding: 16px 24px; border-top: 1px solid var(--border-light); background: transparent; z-index: 10; }
+    .btn-primary-full {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: max-content; padding: 0 28px; height: 40px; border-radius: 8px; border: none;
+      background: var(--primary); color: #ffffff; font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: 0.15s ease;
+    }
+    .btn-primary-full:hover { background: #1d4ed8; }
+    .btn-primary-full svg { stroke: currentColor; stroke-width: 2; width: 16px; height: 16px; }
+    .btn-primary-full.is-done { background: var(--success); }
+    .btn-primary-full.is-done:hover { background: #047857; }
+
+    /* =========================================
+       4. DAFTAR KARTU & HOME GALLERY
+       ========================================= */
+    .card-list { display: flex; flex-direction: column; gap: 12px; padding-bottom: 80px; }
+    .card {
+      background-color: var(--bg-card); border-radius: 12px; padding: 16px;
+      display: flex; align-items: center; gap: 12px;
+      user-select: none; touch-action: none; cursor: pointer;
+      border: 1px solid var(--border-medium); 
+      transition: border-color 0.15s ease;
+    }
+    .card:hover { border-color: var(--icon-color); }
+    .card.is-active { border-color: var(--primary); }
+    .card.dragging { z-index: 100; transition: none !important; transform: scale(1.02); background-color: var(--bg-card); cursor: grabbing !important; box-shadow: 0 12px 24px rgba(0,0,0,0.05); }
+    .card-placeholder { border: 1px dashed #bfdbfe; background-color: #eff6ff; border-radius: 12px; box-sizing: border-box; }
+    
+    .completed-label { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-top: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; gap: 6px; }
+    .card.is-completed { background-color: var(--bg-body); border-color: var(--border-light); cursor: pointer; }
+    .card.is-completed .item-title { text-decoration: line-through; color: var(--icon-color); }
+    .card.is-completed .badge-status { background-color: var(--icon-color) !important; }
+
+    .drag-handle { cursor: grab; display: flex; color: var(--icon-color); padding: 2px; flex-shrink: 0; }
+    .drag-handle:active { cursor: grabbing; }
+    .card-content { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+    .content-top { display: flex; align-items: center; gap: 10px; }
+    .item-qty { width: 48px; flex-shrink: 0; font-size: 12px; font-weight: 600; color: var(--text-muted); }
+    .item-title { font-size: 14px; font-weight: 600; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 0.15s ease; }
+    .content-bottom { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .badge-status { color: #ffffff; font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 6px; transition: background-color 0.15s ease; text-transform: uppercase;}
+    .meta-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-muted); line-height: 1; }
+    .item-datetime { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; flex-shrink: 0; line-height: 1.4; text-align: right; font-size: 11px; color: var(--text-muted); }
+
+    /* Home Gallery Cards */
+    .home-card-item {
+      display: flex; flex-direction: column; gap: 8px; cursor: pointer;
+      transition: transform 0.15s ease; will-change: transform;
+    }
+    .home-card-item:hover { transform: translateY(-4px); }
+
+    /* =========================================
+       5. RUANG KERJA (KOLOM TENGAH)
+       ========================================= */
+    .info-empty { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--icon-color); font-size: 14px; gap: 12px; text-align: center; padding: 20px;}
+    .info-detail-view { display: none; flex-direction: column; padding: 0 8px; flex: 1; overflow: hidden; animation: fadeIn 0.15s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+    .editor-row { display: flex; align-items: baseline; gap: 12px; width: 100%; }
+    .editor-title { flex: 1; font-size: 26px !important; font-weight: 700 !important; color: var(--text-main); min-width: 0; letter-spacing: -0.5px;}
+    .editor-qty-wrapper { display: flex; align-items: baseline; gap: 4px; font-size: 20px; font-weight: 600; color: var(--primary); flex-shrink: 0;}
+    .editor-qty-wrapper input { width: 50px; text-align: right; color: var(--primary); }
+    
+    .clean-input {
+      border: none; background: transparent; outline: none; box-shadow: none;
+      color: inherit; font-family: inherit; font-size: inherit; font-weight: inherit;
+      padding: 0; margin: 0; display: block; width: 100%; transition: color 0.15s ease;
+    }
+    .clean-input::placeholder { color: var(--icon-color); }
+    .clean-input[type=number]::-webkit-inner-spin-button, .clean-input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+    .action-row { 
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; margin-top: 12px;
+      padding-bottom: 20px; border-bottom: 1px solid var(--border-light);
+      flex-shrink: 0;
+    }
+    
+    .desc-subtask-grid { display: grid; grid-template-columns: 55fr 45fr; gap: 32px; width: 100%; flex: 1; overflow: hidden; margin-bottom: 8px; align-items: stretch;}
+    
+    /* Scroll Mandiri Area */
+    .scroll-area-y {
+      flex: 1; width: 100%; overflow-y: auto; overflow-x: hidden; padding-right: 6px;
+    }
+    
+    /* Subtask UI */
+    .subtask-list { display: flex; flex-direction: column; gap: 8px; }
+    .subtask-card { 
+      display: flex; align-items: center; gap: 12px; padding: 12px 14px; 
+      background: transparent; border: 1px solid var(--border-medium); border-radius: 8px; 
+      transition: border-color 0.15s ease;
+      flex-shrink: 0;
+    }
+    .subtask-card:hover { border-color: var(--icon-color); }
+    
+    .subtask-checkbox {
+      appearance: none; -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border-color);
+      background: transparent; position: relative; cursor: pointer; flex-shrink: 0; transition: all 0.15s ease; margin: 0; outline: none;
+    }
+    .subtask-checkbox:checked { background: var(--primary); border-color: var(--primary); }
+    .subtask-checkbox::after {
+      content: ''; position: absolute; top: 2px; left: 5px; width: 3px; height: 7px;
+      border: solid #ffffff; border-width: 0 2px 2px 0; transform: rotate(45deg); opacity: 0; transition: opacity 0.15s ease;
+    }
+    .subtask-checkbox:checked::after { opacity: 1; }
+
+    .subtask-input { flex: 1; border: none; outline: none; font-size: 13px; color: var(--text-main); background: transparent; min-width: 0; transition: color 0.15s ease; }
+    .subtask-card.is-done { background: var(--bg-body); border-color: var(--border-light); }
+    .subtask-card.is-done .subtask-input { text-decoration: line-through; color: var(--icon-color); }
+    
+    .btn-del-subtask { 
+      background: transparent; border: none; color: var(--icon-color); cursor: pointer; 
+      padding: 2px; flex-shrink: 0; transition: opacity 0.15s ease, visibility 0.15s; opacity: 0; visibility: hidden; 
+    }
+    .btn-del-subtask svg { width: 12px; height: 12px; stroke-width: 2.5; }
+    .subtask-card:hover .btn-del-subtask { opacity: 1; visibility: visible; }
+    .btn-del-subtask:hover { color: #dc2626; }
+
+    .btn-add-subtask {
+      display: flex; align-items: center; justify-content: flex-start; gap: 10px; padding: 12px 14px; width: 100%;
+      background: transparent; border: 1px dashed var(--border-medium); border-radius: 8px; 
+      color: var(--text-muted); font-size: 13px; font-weight: 500; cursor: pointer; 
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+    .btn-add-subtask:hover { background: var(--border-light); color: var(--text-main); }
+
+    /* =========================================
+       6. FITUR LAMPIRAN & APP LAUNCHER
+       ========================================= */
+    .media-item { position: relative; width: 100%; margin-bottom: 20px; animation: fadeIn 0.15s ease; }
+    .media-thumbnail { 
+      width: 100%; height: auto; display: block; cursor: pointer; transition: opacity 0.15s ease; 
+      border: 1px solid var(--border-medium) !important; border-radius: 8px !important; background: transparent !important;
+    }
+    .media-thumbnail:hover { opacity: 0.85; }
+    
+    .media-menu-wrapper { position: absolute; top: 8px; right: 8px; z-index: 10; opacity: 0; transition: opacity 0.15s ease; }
+    .media-item:hover .media-menu-wrapper { opacity: 1; }
+    .media-menu-btn { 
+      background: rgba(255, 255, 255, 0.9); color: var(--text-main); border: 1px solid var(--border-medium); border-radius: 6px; 
+      width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; 
+      cursor: pointer; transition: background-color 0.15s ease;
+    }
+    .media-menu-btn:hover { background: #ffffff; }
+    
+    .media-dropdown { 
+      position: absolute; top: 100%; right: 0; margin-top: 6px; background: white; border: 1px solid var(--border-medium); 
+      border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); display: flex; flex-direction: column; overflow: hidden; min-width: 100px;
+      opacity: 0; visibility: hidden; transform: translateY(-5px); transition: all 0.15s ease;
+    }
+    .media-menu-wrapper:hover .media-dropdown { opacity: 1; visibility: visible; transform: translateY(0); }
+    .media-dropdown button { 
+      padding: 10px 14px; border: none; background: white; text-align: left; font-size: 12px; cursor: pointer; color: #dc2626; font-weight: 500; 
+      display: flex; align-items: center; gap: 8px; transition: background-color 0.15s ease;
+    }
+    .media-dropdown button:hover { background: #fef2f2; }
+
+    /* App Launcher Dropdown */
+    .app-launcher-menu {
+      position: absolute; top: 0px; right: 44px; 
+      width: 280px;
+      background: rgba(255,255,255,0.98); border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.08); z-index: 2000; border: 1px solid var(--border-medium);
+      opacity: 0; visibility: hidden; transform: translateY(10px) scale(0.95);
+      transition: all 0.2s cubic-bezier(0.2, 0, 0, 1); transform-origin: top right;
+      padding: 24px; overflow: hidden;
+    }
+    .app-launcher-menu.is-open { opacity: 1; visibility: visible; transform: translateY(0) scale(1); }
+    
+    /* Expanded mode for Iframe */
+    .app-launcher-menu.is-expanded { height: calc(100vh - 24px); padding: 0; display: flex; flex-direction: column; }
+    
+    .app-launcher-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px 12px; }
+    .app-icon { display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; }
+    .app-icon-box { 
+      width: 48px; height: 48px; background: transparent; border-radius: 14px; 
+      display: flex; align-items: center; justify-content: center; transition: all 0.15s ease; border: 1px solid var(--border-medium); color: var(--icon-color);
+    }
+    .app-icon:hover .app-icon-box { background: var(--border-light); color: var(--primary); border-color: var(--border-color); }
+    .app-icon span { font-size: 11px; color: var(--text-main); font-weight: 500; text-align: center; }
+
+    /* =========================================
+       7. FAB, MODALS & TOAST
+       ========================================= */
+    .fab {
+      position: absolute; bottom: 24px; right: 24px;
+      width: 52px; height: 52px; border-radius: 50%; background-color: var(--primary); color: #ffffff;
+      display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px var(--primary-glow);
+      cursor: pointer; z-index: 200; transition: transform 0.15s ease;
+    }
+    .fab:active { transform: scale(0.92); }
+    
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(15, 23, 42, 0.4); backdrop-filter: blur(2px);
+      display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.15s ease; z-index: 3000; padding: 16px;
+    }
+    .modal-overlay.is-open { opacity: 1; pointer-events: auto; }
+    .modal-panel { 
+      background: var(--bg-card); width: 100%; max-width: 380px; border-radius: 16px; padding: 24px; 
+      transform: translateY(10px) scale(0.98); transition: transform 0.15s ease; border: 1px solid var(--border-medium);
+    }
+    .modal-overlay.is-open .modal-panel { transform: translateY(0) scale(1); }
+    
+    .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+    .form-group label { font-size: 12px; font-weight: 600; color: var(--text-main); }
+    .form-group input, .form-group select { padding: 12px 14px; border: 1px solid var(--border-medium); border-radius: 8px; font-size: 14px; outline: none; background: transparent; transition: border-color 0.15s;}
+    .form-group input:focus, .form-group select:focus { border-color: var(--primary); }
+    
+    .custom-date-grid { display: flex; gap: 8px; width: 100%; }
+    .custom-date-grid > * { flex: 1; min-width: 0; }
+    .custom-date-grid select { flex: 1.5; }
+    .custom-time-grid { display: flex; align-items: center; gap: 8px; width: 100%; }
+    .custom-time-grid input { flex: 1; min-width: 0; text-align: center; }
+
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 28px; }
+    .btn { padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: 0.15s ease;}
+    .btn-cancel { background: transparent; color: var(--text-main); border-color: var(--border-medium); }
+    .btn-cancel:hover { background: var(--border-light); }
+    .btn-submit { background: var(--primary); color: #fff; }
+    .btn-submit:hover { background: #1d4ed8; }
+
+    /* Modal Preview Gambar */
+    .modal-preview {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(15, 23, 42, 0.85); z-index: 4000;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.15s ease;
+    }
+    .modal-preview.is-open { opacity: 1; pointer-events: auto; }
+    .preview-container { 
+      width: 60%; height: 90%; background: #ffffff; border-radius: 12px; 
+      display: flex; align-items: center; justify-content: center; 
+      overflow: hidden; position: relative; 
+      transform: scale(0.98); transition: transform 0.15s ease;
+    }
+    .modal-preview.is-open .preview-container { transform: scale(1); }
+    .preview-close {
+      position: absolute; top: 16px; right: 16px; background: rgba(0,0,0,0.4); color: #fff;
+      border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; z-index: 4010; transition: background-color 0.15s ease;
+    }
+    .preview-close:hover { background: rgba(0,0,0,0.8); }
+    .preview-image { width: 100%; height: 100%; object-fit: contain; cursor: grab; }
+    .preview-image:active { cursor: grabbing; }
+
+    .toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px);
+      background: #1f2937; color: #fff; padding: 12px 24px; border-radius: 8px;
+      font-size: 13px; font-weight: 500; z-index: 5000;
+      opacity: 0; transition: all 0.2s ease; display: flex; align-items: center; gap: 8px;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+    /* =========================================
+       8. MOBILE RESPONSIVE
+       ========================================= */
+    .sheet-backdrop { display: none; }
+    .close-sheet-btn { display: none; }
+
+    @media (max-width: 991px) {
+      .universal-header { padding: 0 16px; }
+      .sidebar {
+        width: 100%; height: var(--mobile-nav-h); flex-direction: row; justify-content: space-around;
+        padding: 0; gap: 0; border-right: none; border-top: 1px solid var(--border-medium);
+        order: 3; position: fixed; bottom: 0; left: 0; z-index: 500;
+      }
+      .nav-item { flex: 1; border-radius: 0; }
+      .nav-item.active { background-color: transparent; color: var(--primary); border-top: 2px solid var(--primary); }
+
+      .main-content { height: calc(100vh - var(--header-h) - var(--mobile-nav-h)); }
+      .main-grid { grid-template-columns: 1fr; padding: 16px; gap: 16px; }
+      .home-layout { grid-template-columns: 1fr; padding: 16px; gap: 16px; }
+      .col-wrapper:nth-child(3) { display: none; } 
+      .home-layout .col-wrapper:nth-child(2) { display: none; } 
+      .fab { position: fixed; bottom: calc(var(--mobile-nav-h) + 20px); right: 20px; } 
+
+      .sheet-backdrop {
+        display: block; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background-color: rgba(15, 23, 42, 0.4); backdrop-filter: blur(2px);
+        z-index: 600; opacity: 0; pointer-events: none; transition: opacity 0.15s ease;
+      }
+      .sheet-backdrop.is-open { opacity: 1; pointer-events: auto; }
+
+      .main-grid .col-wrapper:nth-child(2) {
+        position: fixed; bottom: 0; left: 0; width: 100%; height: 85vh; 
+        z-index: 601; border-radius: 20px 20px 0 0 !important; border: none !important; box-shadow: 0 -10px 40px rgba(0,0,0,0.1) !important;
+        transform: translateY(100%); transition: transform 0.2s ease;
+      }
+      .main-grid .col-wrapper:nth-child(2).is-open { transform: translateY(0); }
+      .main-grid .col-wrapper:nth-child(2) .col-header { border-radius: 20px 20px 0 0; }
+      
+      .close-sheet-btn { display: flex; background: transparent; border: none; align-items: center; justify-content: center; color: var(--icon-color); cursor: pointer; padding: 0;}
+      .editor-row { flex-direction: column; gap: 4px; align-items: flex-start; }
+      .action-row { overflow-x: auto; padding-bottom: 12px; flex-wrap: nowrap; } 
+      
+      .desc-subtask-grid { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; gap: 16px; }
+      
+      .preview-container { width: 100%; height: 100%; border-radius: 0; } 
+      .app-launcher-menu { right: 16px; top: 52px; } 
+    }
+
+    /* ICONS SETUP */
+    svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round;}
+    .icon { width: 12px; height: 12px; stroke: var(--text-muted); }
+    .drag-handle svg { width: 12px; height: 12px; fill: currentColor; stroke: none; }
+  </style>
+</head>
+<body>
+
+  <!-- SVG Master List -->
+  <svg style="display: none;">
+    <symbol id="icon-home" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></symbol>
+    <symbol id="icon-list" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></symbol>
+    <symbol id="icon-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></symbol>
+    <symbol id="icon-drag" viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></symbol>
+    <symbol id="icon-task" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></symbol>
+    <symbol id="icon-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></symbol>
+    <symbol id="icon-close" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></symbol>
+    <symbol id="icon-empty" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="9" x2="15" y2="15"></line><line x1="15" y1="9" x2="9" y2="15"></line></symbol>
+    <symbol id="icon-check-circle" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></symbol>
+    <symbol id="icon-chevron-left" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></symbol>
+    <symbol id="icon-chevron-right" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></symbol>
+    <symbol id="icon-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></symbol>
+    <symbol id="icon-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></symbol>
+    <symbol id="icon-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></symbol>
+    <symbol id="icon-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></symbol>
+    <symbol id="icon-dots-vertical" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="2" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="icon-paperclip" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></symbol>
+    <symbol id="icon-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect></symbol>
+    <symbol id="icon-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></symbol>
+    <symbol id="icon-music" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></symbol>
+  </svg>
+
+  <div class="app-wrapper">
+    
+    <!-- HEADER UNIVERSAL (100% Lebar Halaman) -->
+    <header class="universal-header" id="universalHeader">
+      <div class="header-brand">
+        <svg style="width:20px;height:20px;color:var(--primary);"><use href="#icon-check-circle"></use></svg>
+        <span id="globalHeaderTitle">Task Manager</span>
+      </div>
+      
+      <div style="position: relative;">
+        <!-- App Launcher Trigger -->
+        <button class="btn-action icon-only" id="btnAppLauncher" title="Aplikasi Lainnya" style="border:none; background:transparent;">
+          <svg style="width: 18px; height: 18px;"><use href="#icon-grid"></use></svg>
+        </button>
+        
+        <!-- App Launcher Dropdown (Bisa Expand ke Atas & Bawah) -->
+        <div class="app-launcher-menu" id="appLauncherMenu">
+          
+          <!-- State 1: Grid Menu (Aplikasi Baru di Atas) -->
+          <div class="app-launcher-grid" id="appLauncherGrid">
+            <!-- Aplikasi Utama Berfungsi -->
+            <div class="app-icon" data-src="https://whiteboard.zidaneasyd.workers.dev" data-title="Whiteboard"><div class="app-icon-box"><svg><use href="#icon-image"></use></svg></div><span>Whiteboard</span></div>
+            <div class="app-icon" data-src="https://progres.zidaneasyd.workers.dev" data-title="Tracker"><div class="app-icon-box"><svg><use href="#icon-task"></use></svg></div><span>Tracker</span></div>
+            <div class="app-icon" data-src="pemutar_musik_lokal.html" data-title="Musik Lokal"><div class="app-icon-box"><svg><use href="#icon-music"></use></svg></div><span>Musik Lokal</span></div>
+            
+            <!-- Aplikasi Dummy -->
+            <div class="app-icon"><div class="app-icon-box"><svg><use href="#icon-calendar"></use></svg></div><span>Agenda</span></div>
+            <div class="app-icon"><div class="app-icon-box"><svg><use href="#icon-upload"></use></svg></div><span>Cloud</span></div>
+            <div class="app-icon"><div class="app-icon-box"><svg><use href="#icon-settings"></use></svg></div><span>Sistem</span></div>
+            <div class="app-icon"><div class="app-icon-box"><svg><use href="#icon-download"></use></svg></div><span>Arsip</span></div>
+            <div class="app-icon"><div class="app-icon-box"><svg><use href="#icon-list"></use></svg></div><span>Laporan</span></div>
+            <div class="app-icon"><div class="app-icon-box"><svg><use href="#icon-check-circle"></use></svg></div><span>Selesai</span></div>
+          </div>
+
+          <!-- State 2: Area Multi-Iframe (Whiteboard, Tracker, Musik) -->
+          <div id="appIframeHeader" style="display: none; padding: 12px 16px; border-bottom: 1px solid var(--border-medium); align-items: center; gap: 12px; background: var(--bg-card); z-index: 10;">
+            <button class="btn-action icon-only" id="btnBackAppGrid" style="height: 28px; width: 28px; border:none; background:rgba(0,0,0,0.04);"><svg><use href="#icon-chevron-left"></use></svg></button>
+            <span style="font-weight: 600; font-size: 13px;" id="appNameTitle">Aplikasi</span>
+          </div>
+          <div id="appIframeBody" style="display: none; flex: 1; background: var(--bg-body); overflow: hidden; position: relative;">
+            <!-- Iframe-iframe akan di-inject ke sini oleh JS -->
+          </div>
+
+        </div>
+      </div>
+    </header>
+
+    <!-- APP BODY (Sidebar + Content) -->
+    <div class="app-body">
+      
+      <!-- SIDEBAR -->
+      <nav class="sidebar" id="mainSidebar">
+        <div class="nav-item" data-menu="home" title="Home"><svg><use href="#icon-home"></use></svg></div>
+        <div class="nav-item active" data-menu="list" title="Daftar Pekerjaan"><svg><use href="#icon-list"></use></svg></div>
+        <div class="nav-item" id="btnOpenSettings" title="Pengaturan Latar Belakang"><svg><use href="#icon-settings"></use></svg></div>
+      </nav>
+
+      <!-- CONTENT WRAPPER -->
+      <div class="main-content">
+        
+        <!-- MENU LIST (DEFAULT: 3 KOLOM) -->
+        <div class="main-grid" id="mainGrid">
+          
+          <!-- KOLOM 1: DAFTAR KARTU -->
+          <section class="col-wrapper">
+            <header class="col-header">
+              <span>Daftar Pekerjaan</span>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn-action icon-only" id="btnImport" title="Impor Data JSON"><svg><use href="#icon-upload"></use></svg></button>
+                <button class="btn-action icon-only" id="btnExport" title="Ekspor Data JSON"><svg><use href="#icon-download"></use></svg></button>
+                <input type="file" id="fileInput" accept=".json" style="display:none;">
+              </div>
+            </header>
+            <div class="col-body">
+              <div class="card-list" id="cardList"></div>
+              <div class="fab" id="btnOpenAddModal" title="Tambah Data">
+                <svg style="stroke-width: 2.5; width:20px; height:20px;"><use href="#icon-plus"></use></svg>
+              </div>
+            </div>
+          </section>
+
+          <!-- BACKDROP MOBILE -->
+          <div class="sheet-backdrop" id="sheetBackdrop"></div>
+
+          <!-- KOLOM 2: RUANG KERJA (INFO PANEL) -->
+          <section class="col-wrapper" id="infoPanel">
+            
+            <header class="col-header" id="infoPanelHeader" style="display: none; border-bottom: none !important; height: auto; min-height: unset; padding: 24px 24px 0; align-items: flex-start; gap: 12px;">
+              <div class="editor-row" style="margin-bottom: 0; flex: 1;">
+                <input type="text" id="detailTitle" class="clean-input editor-title" spellcheck="false" autocorrect="off" autocomplete="off" placeholder="Nama Pekerjaan">
+                <div class="editor-qty-wrapper">
+                  <input type="number" id="detailQty" class="clean-input" placeholder="0">
+                  <span style="font-size: 14px; color: var(--text-muted); font-weight: 500;">pcs</span>
+                </div>
+              </div>
+              <button class="close-sheet-btn" id="btnCloseSheet" style="margin-top: 4px;"><svg style="width:20px;height:20px;"><use href="#icon-close"></use></svg></button>
+            </header>
+
+            <!-- Diubah agar tidak bisa scroll secara keseluruhan -->
+            <div class="col-body" style="padding: 24px 24px 12px 24px; overflow: hidden; display: flex; flex-direction: column;">
+              
+              <div class="info-empty" id="infoEmpty">
+                <svg style="width: 48px; height: 48px; opacity: 0.5;"><use href="#icon-empty"></use></svg>
+                <p>Pilih kartu dari daftar untuk melihat<br>dan mengedit detail.</p>
+              </div>
+
+              <div class="info-detail-view" id="infoDetail">
+                
+                <!-- BARIS AKSI -->
+                <div class="action-row">
+                  <button class="btn-action btn-action-sm" id="btnOpenDeadlineModal">
+                    <svg><use href="#icon-calendar"></use></svg>
+                    <span id="deadlineDisplay">Tentukan Deadline</span>
+                  </button>
+                  
+                  <div class="status-group">
+                    <button class="btn-action btn-action-sm icon-only" id="btnPrevStatus" title="Status Sebelumnya"><svg><use href="#icon-chevron-left"></use></svg></button>
+                    <button class="btn-action btn-action-sm" style="min-width: 72px; pointer-events: none;"><span id="detailStatusBadge" style="color:var(--text-main); font-weight:600;">List</span></button>
+                    <button class="btn-action btn-action-sm icon-only" id="btnNextStatus" title="Status Selanjutnya"><svg><use href="#icon-chevron-right"></use></svg></button>
+                  </div>
+                </div>
+
+                <!-- GRID DESKRIPSI & SUBTASK (SCROLL MANDIRI) -->
+                <div class="desc-subtask-grid">
+                  
+                  <!-- Kiri: Deskripsi -->
+                  <div style="display: flex; flex-direction: column; height: 100%; overflow: hidden;">
+                    <h3 style="font-size: 13px; margin-bottom: 8px; border-bottom: 1px solid var(--border-light); padding-bottom: 8px; color: var(--text-muted); flex-shrink: 0;">Deskripsi Pekerjaan</h3>
+                    <textarea id="detailDescription" class="clean-input scroll-area-y" placeholder="Tulis detail spesifikasi di sini..." style="resize: none; margin-top: 8px; font-size: 14px; line-height: 1.5; color: var(--text-muted); flex: 1;"></textarea>
+                  </div>
+                  
+                  <!-- Kanan: Subtask -->
+                  <div style="display: flex; flex-direction: column; height: 100%; overflow: hidden;">
+                    <h3 style="font-size: 13px; margin-bottom: 12px; border-bottom: 1px solid var(--border-light); padding-bottom: 8px; color: var(--text-muted); flex-shrink: 0;">Daftar Subtask</h3>
+                    
+                    <div id="subtaskList" class="subtask-list scroll-area-y" style="flex: 1;">
+                      <!-- Kartu Subtask akan dimuat di sini -->
+                    </div>
+                    
+                    <button class="btn-add-subtask" id="btnAddSubtask" style="margin-top: 12px; flex-shrink: 0;">
+                      <svg><use href="#icon-plus"></use></svg> Tambah Subtask
+                    </button>
+                  </div>
+
+                </div>
+                
+              </div>
+
+            </div>
+
+            <!-- FOOTER: TOMBOL SELESAI -->
+            <footer class="col-footer" id="infoFooter" style="display: none;">
+              <button class="btn-primary-full" id="btnToggleDone">
+                <svg><use href="#icon-check-circle"></use></svg> 
+                <span id="btnDoneText">Tandai Selesai</span>
+              </button>
+            </footer>
+
+          </section>
+
+          <!-- KOLOM 3: AREA LAMPIRAN MEDIA -->
+          <section class="col-wrapper">
+            <header class="col-header">
+              <span>Lampiran</span>
+              <button class="btn-action icon-only" id="btnAddMedia" title="Tambah Gambar" style="border:none;">
+                <svg><use href="#icon-plus"></use></svg>
+              </button>
+              <input type="file" id="mediaInput" accept="image/*" style="display:none;">
+            </header>
+            <div class="col-body" style="padding: 24px;">
+              <div id="mediaGallery" style="display: flex; flex-direction: column; width: 100%;">
+                <div id="mediaEmpty" style="text-align: center; color: var(--icon-color); font-size: 13px; margin-top: 40px;">
+                  Belum ada lampiran.
+                </div>
+              </div>
+            </div>
+          </section>
+
+        </div>
+
+        <!-- MENU HOME (GALERI 7:3) -->
+        <div class="home-layout" id="homeLayout">
+          
+          <section class="col-wrapper">
+            <div class="col-body" style="padding: 24px;">
+              <div id="homeGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 24px;">
+                <!-- Grid Gambar -->
+              </div>
+            </div>
+          </section>
+          
+          <section class="col-wrapper">
+            <div class="col-body" style="display: flex; align-items: center; justify-content: center; color: var(--icon-color); font-size: 13px; text-align: center;">
+              Area Kosong<br>(3/10 Ruang)
+            </div>
+          </section>
+
+        </div>
+      </div> <!-- END MAIN CONTENT -->
+
+    </div> <!-- END APP BODY -->
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="toast">
+    <svg style="width:16px;height:16px;"><use href="#icon-info"></use></svg>
+    <span id="toastMsg">Pesan</span>
+  </div>
+
+  <!-- MODAL: SETTINGS (LATAR BELAKANG) -->
+  <div class="modal-overlay" id="modalSettings">
+    <div class="modal-panel">
+      <div style="font-size: 18px; font-weight: 600; margin-bottom: 20px;">Pengaturan Tampilan</div>
+      <div class="form-group">
+        <label>Gambar Latar Belakang Aplikasi</label>
+        <button class="btn-action" id="btnUploadBg" style="width:100%; justify-content:center;">Pilih & Unggah Gambar</button>
+        <input type="file" id="inputBgFile" accept="image/*" style="display:none;">
+        <button class="btn-action" id="btnRemoveBg" style="width:100%; justify-content:center; margin-top:8px; color:#dc2626; border-color:#fecaca; background:#fef2f2;">Hapus Latar Belakang</button>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-cancel" id="btnCloseSettings">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: TAMBAH DATA -->
+  <div class="modal-overlay" id="modalAdd">
+    <div class="modal-panel">
+      <div style="font-size: 18px; font-weight: 600; margin-bottom: 20px;">Tambah Pekerjaan Baru</div>
+      <div class="form-group">
+        <label for="inputTitle">Nama Pekerjaan (Tekan Enter untuk simpan)</label>
+        <input type="text" id="inputTitle" placeholder="Misal: Spanduk 3x1" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="form-group">
+        <label for="inputQty">Jumlah (pcs) - Opsional</label>
+        <input type="number" id="inputQty" placeholder="Otomatis 1 jika kosong" autocomplete="off">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-cancel" id="btnCancelAdd">Batal</button>
+        <button class="btn btn-submit" id="btnSubmitAdd">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL KUSTOM: TENGGAT WAKTU (DEADLINE) -->
+  <div class="modal-overlay" id="modalDeadline">
+    <div class="modal-panel">
+      <div style="font-size: 18px; font-weight: 600; margin-bottom: 20px;">Atur Tenggat Waktu</div>
+      
+      <div class="form-group">
+        <label>Tanggal Deadline</label>
+        <div class="custom-date-grid">
+          <input type="number" id="inpDay" placeholder="Tgl" min="1" max="31">
+          <select id="inpMonth">
+            <option value="0">Jan</option><option value="1">Feb</option><option value="2">Mar</option>
+            <option value="3">Apr</option><option value="4">Mei</option><option value="5">Jun</option>
+            <option value="6">Jul</option><option value="7">Agu</option><option value="8">Sep</option>
+            <option value="9">Okt</option><option value="10">Nov</option><option value="11">Des</option>
+          </select>
+          <input type="number" id="inpYear" placeholder="Thn" min="2024">
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top: 16px;">
+        <label>Jam & Menit (Tekan Enter untuk Simpan)</label>
+        <div class="custom-time-grid">
+          <input type="number" id="inpHour" placeholder="00" min="0" max="23">
+          <span style="font-weight:bold; color:var(--text-muted)">:</span>
+          <input type="number" id="inpMinute" placeholder="00" min="0" max="59">
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-cancel" id="btnCancelDeadline">Batal</button>
+        <button class="btn btn-submit" id="btnSubmitDeadline">Terapkan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL PREVIEW GAMBAR -->
+  <div class="modal-preview" id="modalPreview">
+    <div class="preview-container">
+      <button class="preview-close" id="btnClosePreview"><svg style="width:20px;height:20px;"><use href="#icon-close"></use></svg></button>
+      <img id="imgPreview" class="preview-image" src="" alt="Preview">
+    </div>
+  </div>
+
+  <script>
+    // --- Elements List ---
+    const list = document.getElementById('cardList');
+    const infoPanel = document.getElementById('infoPanel');
+    const infoPanelHeader = document.getElementById('infoPanelHeader');
+    const infoFooter = document.getElementById('infoFooter');
+    const sheetBackdrop = document.getElementById('sheetBackdrop');
+    const infoEmpty = document.getElementById('infoEmpty');
+    const infoDetail = document.getElementById('infoDetail');
+    
+    // --- Workspace Elements ---
+    const btnToggleDone = document.getElementById('btnToggleDone');
+    const btnDoneText = document.getElementById('btnDoneText');
+    const detailTitle = document.getElementById('detailTitle');
+    const detailQty = document.getElementById('detailQty');
+    const detailDescription = document.getElementById('detailDescription');
+    const deadlineDisplay = document.getElementById('deadlineDisplay');
+    const detailStatusBadge = document.getElementById('detailStatusBadge');
+
+    // --- Media Elements ---
+    const btnAddMedia = document.getElementById('btnAddMedia');
+    const mediaInput = document.getElementById('mediaInput');
+    const mediaGallery = document.getElementById('mediaGallery');
+    const modalPreview = document.getElementById('modalPreview');
+    const imgPreview = document.getElementById('imgPreview');
+    const btnClosePreview = document.getElementById('btnClosePreview');
+    
+    // --- Navigation & App Launcher Elements ---
+    const globalHeaderTitle = document.getElementById('globalHeaderTitle');
+    const mainSidebar = document.getElementById('mainSidebar');
+    const navItems = mainSidebar.querySelectorAll('.nav-item');
+    const mainGrid = document.getElementById('mainGrid');
+    const homeLayout = document.getElementById('homeLayout');
+    
+    const btnAppLauncher = document.getElementById('btnAppLauncher');
+    const appLauncherMenu = document.getElementById('appLauncherMenu');
+    const appLauncherGrid = document.getElementById('appLauncherGrid');
+    const appIframeHeader = document.getElementById('appIframeHeader');
+    const appIframeBody = document.getElementById('appIframeBody');
+    const btnBackAppGrid = document.getElementById('btnBackAppGrid');
+    const appNameTitle = document.getElementById('appNameTitle');
+    
+    // --- Settings (Background) Elements ---
+    const btnOpenSettings = document.getElementById('btnOpenSettings');
+    const modalSettings = document.getElementById('modalSettings');
+    const btnCloseSettings = document.getElementById('btnCloseSettings');
+    const inputBgFile = document.getElementById('inputBgFile');
+    const btnUploadBg = document.getElementById('btnUploadBg');
+    const btnRemoveBg = document.getElementById('btnRemoveBg');
+
+    // --- Config & Toast ---
+    const STATUS_LIST = ['List', 'Setting', 'Cutting', 'Print', 'Pasang', 'Finishing', 'Packing', 'Kirim'];
+    const DAY_NAMES = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+    const MONTH_NAMES_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+    let isDragging = false;
+    let draggedCard = null, placeholder = null, startY = 0;
+    let toastTimeout;
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        document.getElementById('toastMsg').textContent = msg;
+        t.classList.add('show');
+        clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    // --- 0. BACKGROUND / SETTINGS INIT ---
+    const savedBg = localStorage.getItem('ws_app_bg');
+    if (savedBg) {
+      document.body.style.backgroundImage = `url(${savedBg})`;
+      document.body.style.backgroundSize = 'cover';
+      document.body.style.backgroundPosition = 'center';
+      document.body.classList.add('has-bg');
+    }
+
+    btnOpenSettings.addEventListener('click', () => { modalSettings.classList.add('is-open'); });
+    btnCloseSettings.addEventListener('click', () => { modalSettings.classList.remove('is-open'); });
+    btnUploadBg.addEventListener('click', () => inputBgFile.click());
+
+    inputBgFile.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const b64 = evt.target.result;
+        try {
+          localStorage.setItem('ws_app_bg', b64);
+          document.body.style.backgroundImage = `url(${b64})`;
+          document.body.style.backgroundSize = 'cover';
+          document.body.style.backgroundPosition = 'center';
+          document.body.classList.add('has-bg');
+          showToast("Latar belakang berhasil diubah");
+          modalSettings.classList.remove('is-open');
+        } catch(err) {
+          showToast("Gambar terlalu besar untuk memori!");
+        }
+      };
+      reader.readAsDataURL(file);
+      this.value = '';
+    });
+
+    btnRemoveBg.addEventListener('click', () => {
+      localStorage.removeItem('ws_app_bg');
+      document.body.style.backgroundImage = 'none';
+      document.body.classList.remove('has-bg');
+      showToast("Latar belakang aplikasi dihapus");
+      modalSettings.classList.remove('is-open');
+    });
+
+    // --- 1. LOCAL STORAGE INIT ---
+    let appData = JSON.parse(localStorage.getItem('ws_kanban_data')) || [];
+    function saveData() { localStorage.setItem('ws_kanban_data', JSON.stringify(appData)); }
+
+    // --- NAVIGATION LOGIC ---
+    navItems.forEach(item => {
+      item.addEventListener('click', () => {
+        if(item.id === 'btnOpenSettings') return; 
+        
+        navItems.forEach(n => { if(n.id !== 'btnOpenSettings') n.classList.remove('active') });
+        item.classList.add('active');
+        
+        const menu = item.getAttribute('data-menu');
+        if (menu === 'home') {
+          globalHeaderTitle.textContent = "Task Manager";
+          mainGrid.style.display = 'none';
+          homeLayout.style.display = 'grid';
+          renderHomeGrid();
+        } else if (menu === 'list') {
+          globalHeaderTitle.textContent = "Task Manager";
+          mainGrid.style.display = 'grid';
+          homeLayout.style.display = 'none';
+          renderList();
+        }
+      });
+    });
+
+    // App Launcher Toggle (Mode Minimize saat diklik tutup/buka)
+    btnAppLauncher.addEventListener('click', (e) => {
+        e.stopPropagation();
+        appLauncherMenu.classList.toggle('is-open');
+    });
+    
+    appLauncherMenu.addEventListener('click', (e) => { e.stopPropagation(); });
+    
+    document.addEventListener('click', (e) => {
+        if(!e.target.closest('#appLauncherMenu') && !e.target.closest('#btnAppLauncher')) {
+            appLauncherMenu.classList.remove('is-open');
+        }
+    });
+
+    // --- FITUR KLIK ICON LAUNCHER TEROTOMATISASI (MULTI-IFRAME BACKGROUND) ---
+    const appIcons = document.querySelectorAll('.app-icon');
+    
+    appIcons.forEach(icon => {
+        icon.addEventListener('click', () => {
+            const appSrc = icon.getAttribute('data-src');
+            const title = icon.getAttribute('data-title');
+            
+            if (appSrc) {
+                appLauncherMenu.classList.add('is-expanded');
+                appLauncherGrid.style.display = 'none';
+                appIframeHeader.style.display = 'flex';
+                appIframeBody.style.display = 'block';
+                appNameTitle.textContent = title;
+                
+                // Cari iframe yang src-nya sesuai
+                let existingIframe = appIframeBody.querySelector(`iframe[data-src="${appSrc}"]`);
+                
+                // Jika tidak ada iframe untuk aplikasi ini, buat yang baru
+                if (!existingIframe) {
+                    existingIframe = document.createElement('iframe');
+                    existingIframe.src = appSrc;
+                    existingIframe.setAttribute('data-src', appSrc);
+                    existingIframe.style.width = '100%';
+                    existingIframe.style.height = '100%';
+                    existingIframe.style.border = 'none';
+                    existingIframe.style.position = 'absolute'; // Ditumpuk di area yang sama
+                    existingIframe.style.top = '0';
+                    existingIframe.style.left = '0';
+                    appIframeBody.appendChild(existingIframe);
+                }
+                
+                // Sembunyikan semua iframe yang ada (minimize)
+                const allIframes = appIframeBody.querySelectorAll('iframe');
+                allIframes.forEach(ifr => {
+                    ifr.style.display = 'none';
+                });
+                
+                // Tampilkan hanya iframe yang sesuai dengan tombol yang diklik
+                existingIframe.style.display = 'block';
+                
+            } else {
+                showToast("Aplikasi belum tersedia.");
+            }
+        });
+    });
+
+    btnBackAppGrid.addEventListener('click', () => {
+        appLauncherMenu.classList.remove('is-expanded');
+        appLauncherGrid.style.display = 'grid';
+        appIframeHeader.style.display = 'none';
+        appIframeBody.style.display = 'none';
+        
+        // Iframe TIDAK dihapus atau disetel ulang. Mereka tetap berada di dalam DOM
+        // sehingga proses (seperti pemutar musik atau state whiteboard) tetap berjalan di background.
+    });
+
+
+    function renderHomeGrid() {
+      const container = document.getElementById('homeGrid');
+      container.innerHTML = '';
+      
+      const activeItems = appData.filter(d => !d.checked).sort((a, b) => (a.order || 0) - (b.order || 0));
+      const completedItems = appData.filter(d => d.checked);
+      
+      if(activeItems.length === 0 && completedItems.length === 0) {
+        container.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 40px; color:var(--icon-color); font-size:14px;">Belum ada pekerjaan.</div>`;
+        return;
+      }
+      
+      const renderCard = (item) => {
+        const card = document.createElement('div');
+        card.className = "home-card-item";
+        
+        card.onclick = () => {
+          navItems.forEach(n => n.classList.remove('active'));
+          navItems[1].classList.add('active'); 
+          
+          mainGrid.style.display = 'grid';
+          homeLayout.style.display = 'none';
+          
+          appData.forEach(d => d.active = false);
+          item.active = true;
+          saveData();
+          renderList();
+        };
+        
+        const imgWrap = document.createElement('div');
+        imgWrap.style.cssText = "position: relative; width: 100%; aspect-ratio: 3/4; background: rgba(0,0,0,0.02); border: 1px solid var(--border-medium); border-radius: 12px; overflow: hidden; display:flex; align-items:center; justify-content:center;";
+        
+        if (item.images && item.images.length > 0) {
+          imgWrap.innerHTML = `<img src="${item.images[0]}" style="width: 100%; height: 100%; object-fit: cover;">`;
+        } else {
+          imgWrap.innerHTML = `<svg style="width:32px;height:32px; stroke:var(--border-medium);"><use href="#icon-empty"></use></svg>`;
+        }
+
+        if (item.checked) {
+          const overlay = document.createElement('div');
+          overlay.style.cssText = "position: absolute; inset: 0; background: rgba(5, 150, 105, 0.85); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 15px; backdrop-filter: blur(2px);";
+          overlay.innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; gap:8px;"><svg style="width:24px;height:24px;stroke-width:2.5;"><use href="#icon-check-circle"></use></svg>Selesai</div>`;
+          imgWrap.appendChild(overlay);
+        }
+        
+        const title = document.createElement('div');
+        title.style.cssText = "font-size: 13px; font-weight: 600; color: var(--text-main); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px;";
+        title.textContent = item.title;
+        if(item.checked) title.style.color = "var(--text-muted)";
+        
+        card.appendChild(imgWrap);
+        card.appendChild(title);
+        return card;
+      };
+
+      activeItems.forEach(item => container.appendChild(renderCard(item)));
+
+      if (completedItems.length > 0) {
+        const separator = document.createElement('div');
+        separator.style.cssText = "grid-column: 1/-1; margin-top: 16px; padding-top: 24px; border-top: 1px dashed var(--border-medium); font-size: 13px; font-weight: 600; color: var(--text-muted); display:flex; align-items:center; gap:8px;";
+        separator.innerHTML = `<svg style="width:16px;height:16px;"><use href="#icon-check-circle"></use></svg> Pekerjaan Selesai`;
+        container.appendChild(separator);
+        
+        completedItems.forEach(item => container.appendChild(renderCard(item)));
+      }
+    }
+
+    // --- 2. RENDER LIST ---
+    function renderList() {
+      if (appData.length === 0) {
+        list.innerHTML = `<div class="info-empty" style="margin-top: 40px;">Belum ada pekerjaan.<br>Klik tombol + untuk menambah.</div>`;
+        closeInfoPanel();
+        return;
+      }
+
+      const activeItems = appData.filter(d => !d.checked).sort((a, b) => (a.order || 0) - (b.order || 0));
+      const completedItems = appData.filter(d => d.checked);
+
+      const createCardHTML = (item) => {
+        const attachmentIcon = (item.images && item.images.length > 0) 
+          ? `<div class="meta-item" title="Ada Lampiran"><svg class="icon"><use href="#icon-paperclip"></use></svg></div>` 
+          : '';
+
+        return `
+        <div class="card ${item.active ? 'is-active' : ''} ${item.checked ? 'is-completed' : ''}" data-id="${item.id}">
+          ${!item.checked ? `<div class="drag-handle" title="Geser Urutan"><svg><use href="#icon-drag"></use></svg></div>` : ''}
+          <div class="card-content">
+            <div class="content-top">
+              <span class="item-qty">${item.qty} pcs</span>
+              <span class="item-title" title="${item.title}">${item.title}</span>
+            </div>
+            <div class="content-bottom">
+              <span class="badge-status" style="background-color: ${item.checked ? 'var(--icon-color)' : 'var(--primary)'}">${item.status}</span>
+              <div class="meta-item"><svg class="icon"><use href="#icon-task"></use></svg><span>${item.taskDone}/${item.taskTotal}</span></div>
+              ${attachmentIcon}
+            </div>
+          </div>
+          <div class="item-datetime">
+            <span>${item.time}</span>
+            <span>${item.dateStr}</span>
+          </div>
+        </div>
+        `;
+      };
+
+      let htmlContent = activeItems.map(createCardHTML).join('');
+
+      if (completedItems.length > 0) {
+        htmlContent += `<div class="completed-label"><svg style="width:16px;height:16px;"><use href="#icon-check-circle"></use></svg> Selesai</div>`;
+        htmlContent += completedItems.map(createCardHTML).join('');
+      }
+
+      list.innerHTML = htmlContent;
+
+      const activeItem = appData.find(d => d.active);
+      if (activeItem) populateInfoPanel(activeItem, false);
+      else closeInfoPanel();
+    }
+
+    // --- 3. WORKSPACE LOGIC ---
+    function populateInfoPanel(item, isUserClick = true) {
+      infoEmpty.style.display = 'none';
+      infoDetail.style.display = 'flex';
+      infoPanelHeader.style.display = 'flex';
+      infoFooter.style.display = 'flex';
+      
+      detailTitle.value = item.title;
+      detailQty.value = item.qty;
+      detailDescription.value = item.description || '';
+      detailStatusBadge.textContent = item.status;
+      deadlineDisplay.textContent = `${item.time} | ${item.dateStr}`;
+      
+      updateWorkspaceDoneState(item.checked);
+      renderSubtasks(item);
+      renderMedia(item);
+
+      if (isUserClick && window.innerWidth <= 991) {
+        infoPanel.classList.add('is-open');
+        sheetBackdrop.classList.add('is-open');
+      }
+    }
+
+    function closeInfoPanel() {
+      infoPanel.classList.remove('is-open');
+      sheetBackdrop.classList.remove('is-open');
+      infoPanelHeader.style.display = 'none';
+      infoFooter.style.display = 'none';
+      
+      if(window.innerWidth <= 991) {
+          appData.forEach(d => d.active = false);
+          saveData();
+          list.querySelectorAll('.card').forEach(c => c.classList.remove('is-active'));
+      }
+    }
+
+    function updateWorkspaceDoneState(isCompleted) {
+      if (isCompleted) {
+        btnToggleDone.classList.add('is-done');
+        btnDoneText.textContent = "Buka Kembali";
+      } else {
+        btnToggleDone.classList.remove('is-done');
+        btnDoneText.textContent = "Tandai Selesai";
+      }
+    }
+
+    detailTitle.addEventListener('input', function() {
+      const activeItem = appData.find(d => d.active);
+      if(activeItem) {
+        activeItem.title = this.value;
+        saveData();
+        const cardTitleDOM = document.querySelector(`.card[data-id="${activeItem.id}"] .item-title`);
+        if(cardTitleDOM) cardTitleDOM.textContent = this.value || 'Tanpa Judul';
+      }
+    });
+
+    detailQty.addEventListener('input', function() {
+      const activeItem = appData.find(d => d.active);
+      if(activeItem) {
+        activeItem.qty = parseInt(this.value) || 0;
+        saveData();
+        const cardQtyDOM = document.querySelector(`.card[data-id="${activeItem.id}"] .item-qty`);
+        if(cardQtyDOM) cardQtyDOM.textContent = `${activeItem.qty} pcs`;
+      }
+    });
+
+    detailDescription.addEventListener('input', function() {
+      const activeItem = appData.find(d => d.active);
+      if(activeItem) {
+        activeItem.description = this.value;
+        saveData();
+      }
+    });
+
+    // Subtask Logic
+    function updateSubtaskProgress(item) {
+      if(!item.subtasks) return;
+      item.taskTotal = item.subtasks.length || 0;
+      item.taskDone = item.subtasks.filter(s => s.done).length || 0;
+      renderList();
+    }
+
+    function renderSubtasks(item) {
+      const listContainer = document.getElementById('subtaskList');
+      listContainer.innerHTML = '';
+      
+      if (!item.subtasks) item.subtasks = [];
+      
+      item.subtasks.forEach((sub, index) => {
+        const card = document.createElement('div');
+        card.className = `subtask-card ${sub.done ? 'is-done' : ''}`;
+        
+        const chk = document.createElement('input');
+        chk.type = 'checkbox';
+        chk.className = 'subtask-checkbox';
+        chk.checked = sub.done;
+        chk.onchange = () => {
+          sub.done = chk.checked;
+          updateSubtaskProgress(item);
+          saveData();
+          renderSubtasks(item);
+        };
+        
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.className = 'subtask-input';
+        inp.value = sub.title;
+        inp.placeholder = 'Nama subtask...';
+        inp.oninput = (e) => {
+          sub.title = e.target.value;
+          saveData();
+        };
+        
+        inp.onkeydown = (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('btnAddSubtask').click();
+          }
+        };
+        
+        const del = document.createElement('button');
+        del.className = 'btn-del-subtask';
+        del.title = "Hapus";
+        del.innerHTML = '<svg><use href="#icon-close"></use></svg>';
+        del.onclick = () => {
+          item.subtasks.splice(index, 1);
+          updateSubtaskProgress(item);
+          saveData();
+          renderSubtasks(item);
+        };
+        
+        card.appendChild(chk);
+        card.appendChild(inp);
+        card.appendChild(del);
+        listContainer.appendChild(card);
+      });
+    }
+
+    document.getElementById('btnAddSubtask').addEventListener('click', () => {
+      const activeItem = appData.find(d => d.active);
+      if(!activeItem) return;
+      if(!activeItem.subtasks) activeItem.subtasks = [];
+      
+      activeItem.subtasks.push({ id: Date.now(), title: '', done: false });
+      updateSubtaskProgress(activeItem);
+      saveData();
+      renderSubtasks(activeItem);
+      
+      setTimeout(() => {
+        const inputs = document.querySelectorAll('.subtask-input');
+        if(inputs.length > 0) inputs[inputs.length - 1].focus();
+      }, 50);
+    });
+
+    document.getElementById('btnPrevStatus').addEventListener('click', () => changeStatus(-1));
+    document.getElementById('btnNextStatus').addEventListener('click', () => changeStatus(1));
+
+    function changeStatus(direction) {
+      const activeItem = appData.find(d => d.active);
+      if(!activeItem) return;
+
+      let currentIndex = STATUS_LIST.indexOf(activeItem.status);
+      if (currentIndex === -1) currentIndex = 0;
+      
+      let newIndex = (currentIndex + direction + STATUS_LIST.length) % STATUS_LIST.length;
+      activeItem.status = STATUS_LIST[newIndex];
+      saveData();
+      
+      detailStatusBadge.textContent = activeItem.status;
+      const cardBadgeDOM = document.querySelector(`.card[data-id="${activeItem.id}"] .badge-status`);
+      if(cardBadgeDOM) cardBadgeDOM.textContent = activeItem.status;
+    }
+
+    btnToggleDone.addEventListener('click', () => {
+      const activeItem = appData.find(d => d.active);
+      if(!activeItem) return;
+
+      activeItem.checked = !activeItem.checked;
+      saveData();
+      updateWorkspaceDoneState(activeItem.checked);
+      renderList();
+    });
+
+    list.addEventListener('click', (e) => {
+      const card = e.target.closest('.card');
+      if (!card || isDragging || e.target.closest('.drag-handle')) return;
+      
+      const id = parseInt(card.getAttribute('data-id'));
+      const item = appData.find(d => d.id === id);
+      if (!item) return;
+      
+      appData.forEach(d => d.active = false);
+      item.active = true;
+      saveData();
+      
+      list.querySelectorAll('.card').forEach(c => c.classList.remove('is-active'));
+      card.classList.add('is-active');
+
+      populateInfoPanel(item, true);
+    });
+
+    sheetBackdrop.addEventListener('click', closeInfoPanel);
+    document.getElementById('btnCloseSheet').addEventListener('click', closeInfoPanel);
+
+    // --- 4. MEDIA ATTACHMENT LOGIC (Dibatasi 1 Media) ---
+    btnAddMedia.addEventListener('click', () => {
+      const activeItem = appData.find(d => d.active);
+      if (activeItem) mediaInput.click();
+      else showToast("Pilih pekerjaan terlebih dahulu");
+    });
+
+    mediaInput.addEventListener('change', function(e) {
+      const activeItem = appData.find(d => d.active);
+      if (!activeItem) return;
+      
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        activeItem.images = [evt.target.result];
+        saveData();
+        renderMedia(activeItem);
+        renderList(); 
+      };
+      reader.readAsDataURL(file);
+      this.value = '';
+    });
+
+    function renderMedia(item) {
+      mediaGallery.innerHTML = '';
+      
+      if (!item.images || item.images.length === 0) {
+        mediaGallery.innerHTML = `<div id="mediaEmpty" style="text-align: center; color: var(--icon-color); font-size: 13px; margin-top: 40px;">Belum ada lampiran.</div>`;
+        btnAddMedia.style.display = 'inline-flex';
+        return;
+      }
+      
+      btnAddMedia.style.display = 'none'; 
+      
+      item.images.forEach((imgSrc, index) => {
+        const div = document.createElement('div');
+        div.className = 'media-item';
+        
+        const img = document.createElement('img');
+        img.src = imgSrc;
+        img.className = 'media-thumbnail';
+        img.onclick = () => openPreview(imgSrc);
+        
+        const menuWrap = document.createElement('div');
+        menuWrap.className = 'media-menu-wrapper';
+        
+        const menuBtn = document.createElement('button');
+        menuBtn.className = 'media-menu-btn';
+        menuBtn.innerHTML = '<svg style="width:16px;height:16px;"><use href="#icon-dots-vertical"></use></svg>';
+        
+        const dropdown = document.createElement('div');
+        dropdown.className = 'media-dropdown';
+        
+        const delBtn = document.createElement('button');
+        delBtn.innerHTML = '<svg style="width:12px;height:12px;stroke-width:2;"><use href="#icon-close"></use></svg> Hapus';
+        delBtn.onclick = (e) => {
+           e.stopPropagation();
+           item.images.splice(index, 1);
+           saveData();
+           renderMedia(item);
+           renderList(); 
+        };
+        
+        dropdown.appendChild(delBtn);
+        menuWrap.appendChild(menuBtn);
+        menuWrap.appendChild(dropdown);
+
+        div.appendChild(img);
+        div.appendChild(menuWrap);
+        mediaGallery.appendChild(div);
+      });
+    }
+
+    // Modal Preview, Zoom, Panning
+    let pScale = 1;
+    let pX = 0;
+    let pY = 0;
+    let isDraggingImg = false;
+    let startPanX = 0;
+    let startPanY = 0;
+    
+    function openPreview(src) {
+      imgPreview.src = src;
+      pScale = 1; pX = 0; pY = 0;
+      imgPreview.style.transform = `translate(0px, 0px) scale(1)`;
+      modalPreview.classList.add('is-open');
+    }
+
+    btnClosePreview.addEventListener('click', () => { modalPreview.classList.remove('is-open'); });
+    
+    modalPreview.addEventListener('click', (e) => {
+      if(e.target === modalPreview) {
+        modalPreview.classList.remove('is-open');
+      }
+    });
+
+    imgPreview.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const zoomStep = 0.15;
+      const delta = e.deltaY < 0 ? zoomStep : -zoomStep;
+      const newScale = Math.min(Math.max(0.5, pScale + delta), 5); 
+      
+      if (pScale !== newScale) {
+        const rect = imgPreview.getBoundingClientRect();
+        const mx = e.clientX - rect.left - rect.width / 2;
+        const my = e.clientY - rect.top - rect.height / 2;
+        
+        const scaleRatio = newScale / pScale;
+        pX -= mx * (scaleRatio - 1);
+        pY -= my * (scaleRatio - 1);
+        
+        pScale = newScale;
+        imgPreview.style.transform = `translate(${pX}px, ${pY}px) scale(${pScale})`;
+      }
+    });
+
+    imgPreview.addEventListener('mousedown', (e) => {
+      e.preventDefault(); 
+      isDraggingImg = true;
+      startPanX = e.clientX - pX;
+      startPanY = e.clientY - pY;
+      imgPreview.style.cursor = 'grabbing';
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDraggingImg) return;
+      pX = e.clientX - startPanX;
+      pY = e.clientY - startPanY;
+      imgPreview.style.transform = `translate(${pX}px, ${pY}px) scale(${pScale})`;
+    });
+
+    window.addEventListener('mouseup', () => {
+      if(isDraggingImg) {
+        isDraggingImg = false;
+        imgPreview.style.cursor = 'grab';
+      }
+    });
+
+    // --- 5. CUSTOM MODAL DEADLINE LOGIC ---
+    const modalDeadline = document.getElementById('modalDeadline');
+    const inpDay = document.getElementById('inpDay');
+    const inpMonth = document.getElementById('inpMonth');
+    const inpYear = document.getElementById('inpYear');
+    const inpHour = document.getElementById('inpHour');
+    const inpMinute = document.getElementById('inpMinute');
+
+    document.getElementById('btnOpenDeadlineModal').addEventListener('click', () => {
+      const activeItem = appData.find(d => d.active);
+      if(!activeItem) return;
+      
+      const d = activeItem.rawDate ? new Date(activeItem.rawDate) : new Date();
+      inpDay.value = d.getDate();
+      inpMonth.value = d.getMonth();
+      inpYear.value = d.getFullYear();
+      inpHour.value = activeItem.rawDate ? d.getHours().toString().padStart(2, '0') : '';
+      inpMinute.value = activeItem.rawDate ? d.getMinutes().toString().padStart(2, '0') : '';
+
+      modalDeadline.classList.add('is-open');
+    });
+
+    document.getElementById('btnCancelDeadline').addEventListener('click', () => modalDeadline.classList.remove('is-open'));
+
+    const submitDeadlineOnEnter = (e) => {
+      if(e.key === 'Enter') {
+        document.getElementById('btnSubmitDeadline').click();
+      }
+    };
+    [inpDay, inpMonth, inpYear, inpHour, inpMinute].forEach(inp => {
+      inp.addEventListener('keydown', submitDeadlineOnEnter);
+    });
+
+    document.getElementById('btnSubmitDeadline').addEventListener('click', () => {
+      const activeItem = appData.find(d => d.active);
+      if(!activeItem) return;
+
+      const newD = new Date();
+      newD.setFullYear(inpYear.value || newD.getFullYear(), inpMonth.value || newD.getMonth(), inpDay.value || newD.getDate());
+      
+      const hr = inpHour.value !== '' ? parseInt(inpHour.value) : 0;
+      const mn = inpMinute.value !== '' ? parseInt(inpMinute.value) : 0;
+      newD.setHours(hr, mn, 0);
+
+      const timeStr = `${newD.getHours().toString().padStart(2,'0')}:${newD.getMinutes().toString().padStart(2,'0')}`;
+      const dateStr = `${DAY_NAMES[newD.getDay()]}, ${newD.getDate().toString().padStart(2,'0')} ${MONTH_NAMES_SHORT[newD.getMonth()]} ${newD.getFullYear().toString().substr(-2)}`;
+
+      activeItem.rawDate = newD.getTime();
+      activeItem.time = timeStr;
+      activeItem.dateStr = dateStr;
+      
+      saveData();
+      
+      deadlineDisplay.textContent = `${timeStr} | ${dateStr}`;
+      renderList(); 
+
+      modalDeadline.classList.remove('is-open');
+    });
+
+    // --- 6. MODAL TAMBAH DATA BARU ---
+    const modalAdd = document.getElementById('modalAdd');
+    const inputTitle = document.getElementById('inputTitle');
+    const inputQty = document.getElementById('inputQty');
+
+    document.getElementById('btnOpenAddModal').addEventListener('click', () => {
+      inputTitle.value = ''; inputQty.value = '';
+      modalAdd.classList.add('is-open');
+      setTimeout(() => inputTitle.focus(), 100);
+    });
+
+    document.getElementById('btnCancelAdd').addEventListener('click', () => modalAdd.classList.remove('is-open'));
+
+    function submitAdd() {
+      const titleVal = inputTitle.value.trim();
+      const qtyVal = inputQty.value.trim();
+      
+      if (!titleVal) { showToast("Silakan isi Nama Pekerjaan"); return; }
+      
+      const finalQty = qtyVal ? parseInt(qtyVal) : 1; 
+      
+      const timeStr = "-:-";
+      const dateStr = "-, - - -";
+
+      const currentOrders = appData.filter(d=>!d.checked).map(d => d.order || 0);
+      const minOrder = currentOrders.length ? Math.min(...currentOrders) : 0;
+
+      appData.push({
+        id: Date.now(), 
+        title: titleVal, 
+        qty: finalQty,
+        description: '',
+        images: [],
+        subtasks: [],   
+        status: 'List', 
+        taskDone: 0, taskTotal: 0,
+        time: timeStr, 
+        dateStr: dateStr,
+        rawDate: null, 
+        checked: false, 
+        active: false,
+        order: minOrder - 1 
+      });
+
+      saveData();
+      modalAdd.classList.remove('is-open');
+      renderList();
+      list.parentElement.scrollTo({ top: 0, behavior: 'smooth' });
+      showToast("Tugas berhasil ditambahkan");
+    }
+
+    document.getElementById('btnSubmitAdd').addEventListener('click', submitAdd);
+    inputTitle.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitAdd(); });
+    inputQty.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitAdd(); });
+
+    // --- 7. SISTEM DRAG & DROP ---
+    function initDrag(e) {
+      const handle = e.target.closest('.drag-handle');
+      if (!handle) return;
+      
+      draggedCard = handle.closest('.card');
+      if(draggedCard.classList.contains('is-completed')) return; 
+      
+      startY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+      isDragging = false;
+
+      const rect = draggedCard.getBoundingClientRect();
+      placeholder = document.createElement('div');
+      placeholder.className = 'card-placeholder';
+      placeholder.style.height = `${rect.height}px`;
+      list.insertBefore(placeholder, draggedCard);
+
+      Object.assign(draggedCard.style, { position: 'fixed', top: `${rect.top}px`, left: `${rect.left}px`, width: `${rect.width}px` });
+      draggedCard.classList.add('dragging');
+
+      window.addEventListener('mousemove', dragMove, { passive: false });
+      window.addEventListener('touchmove', dragMove, { passive: false });
+      window.addEventListener('mouseup', endDrag);
+      window.addEventListener('touchend', endDrag);
+    }
+
+    function dragMove(e) {
+      if (!draggedCard) return;
+      if (e.cancelable) e.preventDefault(); 
+      isDragging = true;
+
+      const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+      const deltaY = clientY - startY;
+      draggedCard.style.transform = `translate3d(0, ${deltaY}px, 0) scale(1.025)`;
+
+      const midY = draggedCard.getBoundingClientRect().top + (draggedCard.offsetHeight / 2);
+      
+      const otherActiveCards = [...list.querySelectorAll('.card:not(.dragging):not(.is-completed)')];
+      const prevRects = new Map(otherActiveCards.map(c => [c, c.getBoundingClientRect()]));
+      
+      let targetCard = otherActiveCards.find(c => midY < c.getBoundingClientRect().top + c.offsetHeight * 0.65);
+      const insertNode = targetCard || list.querySelector('.completed-label') || null; 
+      
+      if (placeholder.nextSibling !== insertNode) {
+        list.insertBefore(placeholder, insertNode);
+        animateShift(otherActiveCards, prevRects); 
+      }
+    }
+
+    function animateShift(cards, prevRects) {
+      cards.forEach(card => {
+        const deltaY = prevRects.get(card).top - card.getBoundingClientRect().top;
+        if (deltaY !== 0) {
+          card.style.transition = 'none'; card.style.transform = `translateY(${deltaY}px)`;
+          card.offsetHeight; card.style.transition = 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)'; card.style.transform = '';
+        }
+      });
+    }
+
+    function endDrag() {
+      if (!draggedCard) return;
+      
+      list.insertBefore(draggedCard, placeholder);
+      placeholder.remove();
+      Object.assign(draggedCard.style, { position: '', top: '', left: '', width: '', transform: '', transition: '' });
+      draggedCard.classList.remove('dragging');
+      
+      let orderIndex = 0;
+      list.querySelectorAll('.card:not(.is-completed)').forEach(c => {
+        const id = parseInt(c.getAttribute('data-id'));
+        const found = appData.find(d => d.id === id);
+        if (found) found.order = orderIndex++;
+      });
+      saveData();
+
+      draggedCard = placeholder = null;
+      window.removeEventListener('mousemove', dragMove); window.removeEventListener('touchmove', dragMove);
+      window.removeEventListener('mouseup', endDrag); window.removeEventListener('touchend', endDrag);
+      
+      setTimeout(() => isDragging = false, 50);
+    }
+
+    list.addEventListener('mousedown', initDrag);
+    list.addEventListener('touchstart', initDrag, { passive: true });
+
+    // --- 8. EKSPOR / IMPOR JSON ---
+    const btnExport = document.getElementById('btnExport');
+    const btnImport = document.getElementById('btnImport');
+    const fileInput = document.getElementById('fileInput');
+
+    btnExport.addEventListener('click', () => {
+      if(appData.length === 0) { showToast("Tidak ada data untuk diekspor"); return; }
+      const dataStr = JSON.stringify(appData, null, 2);
+      const blob = new Blob([dataStr], {type: "application/json"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = "kanban_workspace_data.json";
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast("Data berhasil diekspor!");
+    });
+
+    btnImport.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const importedData = JSON.parse(evt.target.result);
+          if (!Array.isArray(importedData)) throw new Error("Format Array JSON tidak valid");
+          
+          let importCount = 0;
+          importedData.forEach(importedItem => {
+            if(!importedItem.id || !importedItem.title) return;
+            const existingIndex = appData.findIndex(item => item.id === importedItem.id);
+            if (existingIndex !== -1) appData[existingIndex] = importedItem;
+            else appData.push(importedItem);
+            importCount++;
+          });
+
+          if(importCount > 0) {
+            saveData();
+            renderList();
+            showToast(`Berhasil mengimpor ${importCount} data!`);
+          } else {
+            showToast("Tidak ada data valid yang diimpor");
+          }
+        } catch (err) {
+          showToast("Gagal membaca file JSON!");
+        }
+      };
+      reader.readAsText(file);
+      this.value = ''; 
+    });
+    
+    // Init rendering
+    renderList(); 
+  </script>
+</body>
+</html>
