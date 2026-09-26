@@ -2,678 +2,657 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Utuh & Bersih - Music Player</title>
-    <!-- JS Media Tags untuk membaca ID3 / Metadata -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimal Music Player 9:19</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
+
     <style>
-        :root {
-            --primary: #111827;      /* Hitam bersih */
-            --bg-color: #ffffff;     /* Putih bersih */
-            --text-main: #111827;
-            --text-muted: #9ca3af;
-            --overlay: rgba(0, 0, 0, 0.4);
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            overflow: hidden; /* Mencegah scroll di body */
-        }
-
-        /* Container Anti-Tembus & Fullview */
-        .mobile-container {
+        .player-frame {
             width: 100%;
-            max-width: 480px;
-            height: 100vh;
-            background-color: var(--bg-color);
-            position: relative;
-            overflow: hidden;
+            height: 100dvh;
+            border: none;
+            border-radius: 0;
+            box-shadow: none;
         }
 
-        /* --- HALAMAN UTAMA (NO SCROLL, FLEXBOX SEMPURNA) --- */
-        .view-page {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            display: flex;
-            flex-direction: column;
-            background-color: var(--bg-color);
-            transition: transform 0.3s ease-in-out;
-            z-index: 1;
+        @media (min-width: 641px) {
+            .player-frame {
+                width: auto;
+                height: 90vh;
+                aspect-ratio: 9 / 19;
+                border: 1px solid rgba(59, 130, 246, 0.28);
+                border-radius: 1.5rem;
+                box-shadow: 0 10px 30px -10px rgba(59, 130, 246, 0.08), 0 2px 8px -2px rgba(0, 0, 0, 0.03);
+            }
         }
 
-        /* Geser halaman ke kiri saat playlist terbuka */
-        .view-page.hidden-left {
-            transform: translateX(-30%);
-            opacity: 0.3;
-            pointer-events: none;
-        }
-
-        /* KOTAK 1:1 UTUH DI ATAS */
-        .album-art-wrapper {
+        .media-ratio {
             width: 100%;
-            /* Menjamin kotak tetap 1:1 tapi tidak memakan ruang kontrol bawah di layar pendek */
-            max-height: 55vh; 
             aspect-ratio: 1 / 1;
-            background-color: #f3f4f6;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            cursor: pointer;
-            overflow: hidden;
-            flex-shrink: 0;
         }
 
-        .album-art-wrapper img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .album-art-wrapper svg.default-icon {
-            width: 64px;
-            height: 64px;
-            fill: var(--text-muted);
-        }
-
-        /* Tulisan petunjuk super samar */
-        .playlist-hint {
-            position: absolute;
-            bottom: 12px;
-            background: rgba(255, 255, 255, 0.6);
-            backdrop-filter: blur(4px);
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.7rem;
-            font-weight: 500;
-            color: var(--text-main);
-        }
-
-        /* BAGIAN BAWAH (INFO & KONTROL) - Fleksibel mengisi sisa ruang */
-        .bottom-section {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 0 32px;
-            gap: 24px; /* Jarak proporsional antar elemen */
-        }
-
-        .track-info {
-            text-align: center;
-            width: 100%;
-        }
-
-        .track-title {
-            font-size: 1.25rem;
-            font-weight: 700;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            margin-bottom: 4px;
-        }
-
-        .track-artist {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .progress-container {
-            width: 100%;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 4px;
-            background-color: #e5e7eb;
-            border-radius: 2px;
+        .seek-track {
+            -webkit-appearance: none;
             appearance: none;
+            width: 100%;
+            height: 2px;
+            background: #e2e8f0;
             outline: none;
-            accent-color: var(--primary);
+            cursor: pointer;
+            transition: height 0.15s ease;
         }
-
-        .progress-bar::-webkit-slider-thumb {
+        .seek-track:hover { height: 3px; }
+        .seek-track::-webkit-slider-thumb {
+            -webkit-appearance: none;
             appearance: none;
-            width: 12px;
-            height: 12px;
-            background: var(--primary);
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
-        }
-
-        .time-info {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            margin-top: 6px;
-        }
-
-        /* KONTROL BERSIH TANPA GARIS */
-        .controls {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 40px;
-        }
-
-        .control-btn {
-            background: none;
-            border: none;
+            background: #2563eb;
             cursor: pointer;
-            color: var(--text-main);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            transition: transform 0.15s ease;
+        }
+        .seek-track:hover::-webkit-slider-thumb { transform: scale(1.3); }
+
+        .playlist-scroll::-webkit-scrollbar { width: 3px; }
+        .playlist-scroll::-webkit-scrollbar-thumb {
+            background-color: rgba(59, 130, 246, 0.25);
+            border-radius: 4px;
         }
 
-        .control-btn svg {
-            width: 32px;
-            height: 32px;
-            fill: currentColor;
-        }
-
-        .control-btn.play-pause svg {
-            width: 54px;
-            height: 54px;
-        }
-
-        /* --- HALAMAN DAFTAR LAGU (PLAYLIST) --- */
-        .playlist-page {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background-color: var(--bg-color);
-            display: flex;
-            flex-direction: column;
-            padding: 24px;
-            transform: translateX(100%);
-            transition: transform 0.3s ease-in-out;
-            z-index: 2;
-        }
-
-        .playlist-page.active {
-            transform: translateX(0);
-        }
-
-        .playlist-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-        }
-
-        .btn-text {
-            background: none;
-            border: none;
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--primary);
-            cursor: pointer;
-        }
-
-        #file-input { display: none; }
-
-        /* SCROLL DAFTAR LOKAL BERSIH */
-        .playlist-scroll {
-            flex: 1;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            padding-bottom: 30px;
-            scrollbar-width: none;
-        }
-        .playlist-scroll::-webkit-scrollbar { display: none; }
-
-        .playlist-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            background: transparent;
-        }
-
-        .playlist-item-info {
-            flex: 1;
-            overflow: hidden;
-            margin-right: 12px;
-        }
-
-        .playlist-item-title {
-            font-size: 0.95rem;
-            font-weight: 600;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            color: var(--text-main);
-        }
-
-        .playlist-item.active .playlist-item-title {
-            color: #2563eb; /* Warna penanda lagu aktif */
-        }
-
-        .playlist-item-artist {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            margin-top: 2px;
-        }
-
-        /* Tombol X Hapus */
-        .btn-delete {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            padding: 4px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-        }
-        .btn-delete svg {
-            width: 20px;
-            height: 20px;
-            fill: currentColor;
-        }
-
-        /* --- MODAL KONFIRMASI HAPUS --- */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--overlay);
-            display: flex; justify-content: center; align-items: center;
-            z-index: 100;
-            opacity: 0; pointer-events: none;
-            transition: opacity 0.2s;
-        }
-        .modal-overlay.active {
-            opacity: 1; pointer-events: auto;
-        }
-        .modal-box {
-            background: #fff; padding: 24px;
-            width: 85%; max-width: 320px;
-            border-radius: 20px;
-            text-align: center;
-            transform: scale(0.9);
-            transition: transform 0.2s;
-        }
-        .modal-overlay.active .modal-box {
-            transform: scale(1);
-        }
-        .modal-box p { font-size: 1rem; font-weight: 600; margin-bottom: 24px; color: var(--text-main); }
-        .modal-buttons { display: flex; gap: 12px; }
-        .modal-btn {
-            flex: 1; padding: 12px; border: none; border-radius: 12px;
-            font-weight: 600; font-size: 0.9rem; cursor: pointer;
-        }
-        .btn-cancel { background: #f3f4f6; color: var(--text-main); }
-        .btn-confirm { background: #ef4444; color: #fff; }
+        .lyrics-panel { transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+        
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body>
+<body class="bg-white min-h-screen m-0 p-0 flex items-center justify-center font-sans antialiased text-slate-800 select-none">
 
-    <div class="mobile-container">
+    <main id="playerCard" class="player-frame bg-white overflow-hidden flex flex-col relative">
         
-        <!-- HALAMAN UTAMA -->
-        <div class="view-page" id="player-view">
-            <!-- Kotak Sampul Album 1:1, Ketuk Buka Playlist -->
-            <div class="album-art-wrapper" id="open-playlist-btn">
-                <div id="album-art-container" style="width:100%; height:100%; display:flex; justify-content:center; align-items:center;">
-                    <svg class="default-icon" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+        <audio id="nativeAudio" preload="metadata"></audio>
+        <input type="file" id="filePickerInput" accept="audio/*" multiple class="hidden" />
+
+        <!-- Toast Notification -->
+        <div id="toastMessage" class="absolute top-10 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white text-[11px] font-medium px-4 py-2 rounded-full shadow-lg opacity-0 pointer-events-none transition-opacity duration-300 z-[100]">
+            Notifikasi
+        </div>
+
+        <!-- Overlay Drag & Drop -->
+        <div id="dragDropOverlay" class="absolute inset-0 bg-blue-600/90 backdrop-blur-sm z-[70] flex flex-col items-center justify-center text-white pointer-events-none opacity-0 transition-opacity duration-200">
+            <svg class="w-8 h-8 mb-2 animate-bounce stroke-current fill-none" viewBox="0 0 24 24" stroke-width="1.75">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V3m0 0l-4 4m4-4l4 4M4.5 19.5h15" />
+            </svg>
+            <p class="text-xs font-medium tracking-wide">Lepaskan file audio atau file lirik (.lrc)</p>
+        </div>
+
+        <div id="loadingOverlay" class="absolute inset-0 bg-white/80 backdrop-blur-sm z-[60] flex flex-col items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+            <div class="relative w-20 h-20 mb-3">
+                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="45" fill="none" stroke="#e2e8f0" stroke-width="6"></circle>
+                    <circle id="loadingProgressCircle" cx="50" cy="50" r="45" fill="none" stroke="#3b82f6" stroke-width="6" stroke-dasharray="283" stroke-dashoffset="283" stroke-linecap="round" class="transition-all duration-200 ease-out"></circle>
+                </svg>
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <span id="loadingText" class="text-sm font-bold text-blue-600">0%</span>
                 </div>
-                <div class="playlist-hint">Ketuk untuk Daftar Lagu</div>
             </div>
-            
-            <!-- Flexbox Bawah untuk menjaga posisi responsif -->
-            <div class="bottom-section">
-                <div class="track-info">
-                    <div class="track-title" id="track-title">Belum ada lagu</div>
-                    <div class="track-artist" id="track-artist">Tambahkan musik lokal</div>
+            <p class="text-xs font-semibold text-slate-600 tracking-wide uppercase">Mengimpor Musik</p>
+        </div>
+
+        <div id="emptyStateView" class="flex-1 flex flex-col items-center justify-center p-8 text-center bg-white w-full h-full">
+            <div id="emptyTriggerBtn" class="w-20 h-20 rounded-full border border-dashed border-blue-300 flex items-center justify-center text-blue-500 hover:border-blue-500 hover:bg-blue-50/50 transition cursor-pointer mb-4">
+                <svg class="w-7 h-7 stroke-current fill-none" viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+            </div>
+            <p class="text-xs font-semibold text-slate-700">Daftar Putar Kosong</p>
+            <p class="text-[11px] text-slate-400 mt-1 max-w-[200px] leading-relaxed">
+                Tarik & lepas file audio ke layar atau klik tombol di atas.
+            </p>
+        </div>
+
+        <div id="albumCoverContainer" class="media-ratio relative w-full overflow-hidden bg-slate-50 flex-shrink-0 hidden">
+            <img id="albumCover" src="" alt="Album Cover" class="w-full h-full object-cover transition-opacity duration-300" />
+            <button id="btnOpenPlaylist" class="absolute top-4 right-4 p-2 text-slate-700 hover:text-blue-600 transition active:scale-95 z-10 bg-white/70 backdrop-blur-sm rounded-full shadow-sm">
+                <svg class="w-4 h-4 fill-none stroke-current" viewBox="0 0 24 24" stroke-width="2">
+                    <line x1="3" y1="6" x2="21" y2="6" stroke-linecap="round" />
+                    <line x1="3" y1="12" x2="16" y2="12" stroke-linecap="round" />
+                    <line x1="3" y1="18" x2="11" y2="18" stroke-linecap="round" />
+                </svg>
+            </button>
+        </div>
+
+        <div id="playerControlsContainer" class="w-full flex flex-col justify-between flex-1 pb-0 relative z-30 bg-white hidden">
+            <div class="flex flex-col gap-2 px-6 pt-3">
+                <div class="text-center overflow-hidden">
+                    <h1 id="songTitle" class="text-sm font-semibold text-slate-800 tracking-tight truncate cursor-pointer hover:text-blue-600 transition">
+                        Belum Memutar Lagu
+                    </h1>
+                    <p id="artistName" class="text-[11px] text-slate-400 font-normal truncate mt-0.5">
+                        Silakan impor lagu
+                    </p>
                 </div>
 
-                <div class="progress-container">
-                    <input type="range" class="progress-bar" id="progress-bar" value="0" max="100" step="0.1">
-                    <div class="time-info">
-                        <span id="current-time">00:00</span>
-                        <span id="duration">00:00</span>
+                <div class="w-full">
+                    <input id="seekBar" type="range" min="0" max="100" value="0" class="seek-track" />
+                    <div class="flex justify-between items-center text-[10px] text-slate-400 mt-1 font-mono tracking-wider">
+                        <span id="currentTime">00:00</span>
+                        <span id="durationTime">00:00</span>
                     </div>
                 </div>
 
-                <!-- Kontrol Utama Bersih -->
-                <div class="controls">
-                    <button class="control-btn" id="prev-btn">
-                        <!-- Icon Prev (Bersih) -->
-                        <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+                <div class="flex items-center justify-center gap-6 mt-1">
+                    <button id="btnPrev" class="p-1.5 text-slate-400 hover:text-slate-800 transition active:scale-90">
+                        <svg class="w-5 h-5 fill-none stroke-current" viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
                     </button>
-                    <button class="control-btn play-pause" id="play-pause-btn">
-                        <!-- Icon Play (Bersih) -->
-                        <svg id="play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    <button id="btnPlayPause" class="w-10 h-10 rounded-full text-slate-900 hover:text-blue-600 transition flex items-center justify-center active:scale-90">
+                        <svg id="playIconSvg" class="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                            <polygon points="6 4 20 12 6 20 6 4" />
+                        </svg>
                     </button>
-                    <button class="control-btn" id="next-btn">
-                        <!-- Icon Next (Bersih) -->
-                        <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6h2v12h-2V6z"/></svg>
+                    <button id="btnNext" class="p-1.5 text-slate-400 hover:text-slate-800 transition active:scale-90">
+                        <svg class="w-5 h-5 fill-none stroke-current" viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
                     </button>
                 </div>
             </div>
-        </div>
 
-        <!-- HALAMAN PLAYLIST -->
-        <div class="playlist-page" id="playlist-page">
-            <div class="playlist-header">
-                <button class="btn-text" id="back-btn">Kembali</button>
-                <button class="btn-text" onclick="document.getElementById('file-input').click()">+ Tambah</button>
-                <input type="file" id="file-input" accept="audio/*" multiple>
+            <div id="btnOpenLyrics" class="w-full h-12 mt-auto bg-white border-t border-x border-blue-200/60 rounded-t-2xl flex items-center justify-center cursor-pointer hover:bg-blue-50/30 transition shadow-sm group">
+                <div class="w-12 h-1.5 bg-blue-500 rounded-full group-hover:bg-blue-600 transition-colors"></div>
             </div>
-            <div class="playlist-scroll" id="playlist"></div>
         </div>
 
-        <!-- MODAL KONFIRMASI HAPUS -->
-        <div class="modal-overlay" id="delete-modal">
-            <div class="modal-box">
-                <p>Hapus lagu ini dari daftar?</p>
-                <div class="modal-buttons">
-                    <button class="modal-btn btn-cancel" onclick="closeModal()">Batal</button>
-                    <button class="modal-btn btn-confirm" id="confirm-delete-btn">Hapus</button>
+        <section id="lyricsView" class="absolute bottom-0 left-0 right-0 h-[98%] bg-white/95 backdrop-blur-xl z-40 rounded-t-3xl shadow-2xl border-t border-slate-100 transform translate-y-full lyrics-panel flex flex-col touch-none">
+            <div class="flex flex-col items-center pt-3 pb-2 flex-shrink-0 cursor-grab active:cursor-grabbing bg-white/50 rounded-t-3xl" id="lyricsDragHandle">
+                <div class="w-12 h-1.5 bg-blue-500 rounded-full mb-3"></div>
+                <div class="flex items-center justify-between w-full px-6">
+                    <h2 class="text-xs font-semibold text-slate-800 tracking-wide uppercase">Lirik Lagu</h2>
+                    <button id="btnCloseLyrics" class="p-1 text-slate-400 hover:text-slate-700 transition">
+                        <svg class="w-4 h-4 fill-none stroke-current" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
                 </div>
             </div>
-        </div>
+            
+            <div id="lyricsContainer" class="flex-1 overflow-y-auto no-scrollbar px-6 text-center text-slate-600 text-sm leading-relaxed scroll-smooth relative">
+            </div>
+        </section>
 
-    </div>
+        <section id="playlistView" class="absolute inset-0 bg-white z-50 transform translate-y-full transition-transform duration-300 ease-in-out flex flex-col">
+            <div class="px-5 py-4 flex items-center justify-between relative flex-shrink-0">
+                <button id="btnClosePlaylist" class="p-2 -ml-2 text-slate-400 hover:text-slate-800 transition active:scale-90">
+                    <svg class="w-5 h-5 fill-none stroke-current" viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+                </button>
+                <div class="relative">
+                    <button id="btnKebabMenu" class="p-2 -mr-2 text-slate-400 hover:text-slate-800 transition active:scale-90">
+                        <svg class="w-4 h-4 fill-none stroke-current" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round">
+                            <circle cx="12" cy="5" r="1" fill="currentColor" />
+                            <circle cx="12" cy="12" r="1" fill="currentColor" />
+                            <circle cx="12" cy="19" r="1" fill="currentColor" />
+                        </svg>
+                    </button>
+                    <div id="kebabDropdown" class="absolute right-0 top-9 w-36 bg-white border border-slate-100 shadow-md rounded-xl py-1 text-xs text-slate-600 hidden z-[60] transition-all">
+                        <button id="menuAddFiles" class="w-full text-left px-3.5 py-2 hover:bg-blue-50/70 hover:text-blue-600 transition">Impor Lagu...</button>
+                        <button id="menuClearAll" class="w-full text-left px-3.5 py-2 hover:bg-rose-50/80 hover:text-rose-600 transition">Kosongkan Daftar</button>
+                    </div>
+                </div>
+            </div>
+            <div id="playlistContainer" class="flex-1 overflow-y-auto playlist-scroll px-5"></div>
+        </section>
 
-    <audio id="audio-element"></audio>
+    </main>
 
     <script>
-        const DB_NAME = 'MusicPlayerDB'; 
-        const STORE_NAME = 'songs';
-        let db;
-
-        const request = indexedDB.open(DB_NAME, 2);
-
-        request.onerror = (event) => console.error("Gagal membuka DB", event);
-        request.onsuccess = (event) => {
-            db = event.target.result;
-            loadSongsFromDB();
-        };
-        request.onupgradeneeded = (event) => {
-            db = event.target.result;
-            if (!db.objectStoreNames.contains(STORE_NAME)) {
-                db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
-            }
-        };
-
-        const audio = document.getElementById('audio-element');
-        const fileInput = document.getElementById('file-input');
-        const playPauseBtn = document.getElementById('play-pause-btn');
-        const playIcon = document.getElementById('play-icon');
-        const prevBtn = document.getElementById('prev-btn');
-        const nextBtn = document.getElementById('next-btn');
-        const progressBar = document.getElementById('progress-bar');
-        const currentTimeEl = document.getElementById('current-time');
-        const durationEl = document.getElementById('duration');
-        const trackTitleEl = document.getElementById('track-title');
-        const trackArtistEl = document.getElementById('track-artist');
-        const playlistEl = document.getElementById('playlist');
-        const albumArtContainer = document.getElementById('album-art-container');
-        
-        const playerView = document.getElementById('player-view');
-        const playlistPage = document.getElementById('playlist-page');
-        const openPlaylistBtn = document.getElementById('open-playlist-btn');
-        const backBtn = document.getElementById('back-btn');
-        const deleteModal = document.getElementById('delete-modal');
+        const DEFAULT_COVER_SVG = 'data:image/svg+xml;utf8,' + encodeURIComponent(`
+            <svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400" fill="none">
+                <rect width="400" height="400" fill="#f8fafc"/>
+                <circle cx="200" cy="200" r="80" fill="#eff6ff" stroke="#bfdbfe" stroke-width="2"/>
+                <path d="M190 170v60l45-30-45-30z" fill="#3b82f6"/>
+            </svg>
+        `);
 
         let playlist = [];
-        let currentIndex = 0;
-        let currentSongId = null; // Bug Fix: Melacak ID lagu untuk sinkronisasi index saat lagu dihapus
-        let songIdToDelete = null;
+        let currentTrackIndex = 0;
+        let isPlaying = false;
+        let currentSyncLineIndex = -1;
 
-        // Navigasi
-        openPlaylistBtn.addEventListener('click', () => {
-            playlistPage.classList.add('active');
-            playerView.classList.add('hidden-left');
-        });
+        const nativeAudio = document.getElementById('nativeAudio');
+        const filePickerInput = document.getElementById('filePickerInput');
+        
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingProgressCircle = document.getElementById('loadingProgressCircle');
+        const loadingText = document.getElementById('loadingText');
+        
+        const dragDropOverlay = document.getElementById('dragDropOverlay');
+        const emptyStateView = document.getElementById('emptyStateView');
+        const albumCoverContainer = document.getElementById('albumCoverContainer');
+        const playerControlsContainer = document.getElementById('playerControlsContainer');
+        const emptyTriggerBtn = document.getElementById('emptyTriggerBtn');
+        const albumCover = document.getElementById('albumCover');
+        const songTitle = document.getElementById('songTitle');
+        const artistName = document.getElementById('artistName');
 
-        backBtn.addEventListener('click', () => {
-            playlistPage.classList.remove('active');
-            playerView.classList.remove('hidden-left');
-        });
+        const seekBar = document.getElementById('seekBar');
+        const currentTimeEl = document.getElementById('currentTime');
+        const durationTimeEl = document.getElementById('durationTime');
 
-        // Modal Logic
-        window.openDeleteModal = function(event, id) {
-            event.stopPropagation();
-            songIdToDelete = id;
-            deleteModal.classList.add('active');
+        const btnPlayPause = document.getElementById('btnPlayPause');
+        const playIconSvg = document.getElementById('playIconSvg');
+        const btnPrev = document.getElementById('btnPrev');
+        const btnNext = document.getElementById('btnNext');
+
+        const playlistView = document.getElementById('playlistView');
+        const playlistContainer = document.getElementById('playlistContainer');
+
+        const lyricsView = document.getElementById('lyricsView');
+        const lyricsContainer = document.getElementById('lyricsContainer');
+        const kebabDropdown = document.getElementById('kebabDropdown');
+
+        function showToast(msg) {
+            const toast = document.getElementById('toastMessage');
+            toast.textContent = msg;
+            toast.classList.remove('opacity-0');
+            setTimeout(() => toast.classList.add('opacity-0'), 3000);
         }
 
-        window.closeModal = function() {
-            deleteModal.classList.remove('active');
-            songIdToDelete = null;
+        function formatTime(seconds) {
+            if (isNaN(seconds) || seconds < 0) return "00:00";
+            const min = Math.floor(seconds / 60);
+            const sec = Math.floor(seconds % 60);
+            return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
         }
 
-        document.getElementById('confirm-delete-btn').addEventListener('click', () => {
-            if (songIdToDelete !== null) {
-                const transaction = db.transaction([STORE_NAME], 'readwrite');
-                const store = transaction.objectStore(STORE_NAME);
-                store.delete(songIdToDelete);
-
-                transaction.oncomplete = () => {
-                    closeModal();
-                    loadSongsFromDB();
-                };
-            }
-        });
-
-        // Proses Tambah File
-        fileInput.addEventListener('change', (e) => {
-            const files = e.target.files;
-            if (files.length === 0) return;
-
-            Array.from(files).forEach(file => {
-                window.jsmediatags.read(file, {
-                    onSuccess: function(tag) {
-                        const tags = tag.tags;
-                        const songName = tags.title || file.name.replace(/\.[^/.]+$/, "");
-                        const artistName = tags.artist || "Artis Tidak Dikenal";
-                        
-                        let pictureData = null;
-                        if (tags.picture) {
-                            const { data, format } = tags.picture;
-                            let base64String = "";
-                            for (let i = 0; i < data.length; i++) {
-                                base64String += String.fromCharCode(data[i]);
-                            }
-                            pictureData = `data:${format};base64,${window.btoa(base64String)}`;
-                        }
-                        saveToDB({ name: songName, artist: artistName, picture: pictureData, file: file });
-                    },
-                    onError: function() {
-                        saveToDB({ name: file.name.replace(/\.[^/.]+$/, ""), artist: "Artis Tidak Dikenal", picture: null, file: file });
-                    }
-                });
-            });
-            fileInput.value = '';
-        });
-
-        function saveToDB(songData) {
-            const transaction = db.transaction([STORE_NAME], 'readwrite');
-            const store = transaction.objectStore(STORE_NAME);
-            store.add(songData);
-            transaction.oncomplete = () => loadSongsFromDB();
+        function setPlayingState(playing) {
+            isPlaying = playing;
+            playIconSvg.innerHTML = isPlaying 
+                ? `<rect x="6" y="4" width="4" height="16" rx="1"></rect><rect x="14" y="4" width="4" height="16" rx="1"></rect>`
+                : `<polygon points="6 4 20 12 6 20 6 4"></polygon>`;
         }
 
-        function loadSongsFromDB() {
-            if (!db) return;
-            const transaction = db.transaction([STORE_NAME], 'readonly');
-            const store = transaction.objectStore(STORE_NAME);
-            const request = store.getAll();
+        function parseLrc(lrcText) {
+            const lines = lrcText.split(/\r?\n/);
+            const syncLyrics = [];
+            const timeRegex = /\[(\d{2,}):(\d{2})(?:\.(\d{1,3}))?\]/g; 
 
-            request.onsuccess = (event) => {
-                playlist = event.target.result.map(song => ({
-                    ...song,
-                    name: song.name || "Lagu Tanpa Nama",
-                    artist: song.artist || "Musik Lokal",
-                    picture: song.picture || null
-                }));
-
-                // BUG FIX: Sesuaikan index baru jika lagu ditengah dihapus
-                if (currentSongId !== null) {
-                    const newIndex = playlist.findIndex(s => s.id === currentSongId);
-                    if (newIndex !== -1) {
-                        currentIndex = newIndex; // Update index
-                    } else {
-                        // Lagu yang sedang diputar dihapus
-                        audio.pause();
-                        audio.src = '';
-                        if (playlist.length > 0) loadSong(0, false);
-                        else resetPlayerState();
-                    }
-                } else if (playlist.length > 0 && !audio.src) {
-                    loadSong(0, false);
+            lines.forEach(line => {
+                let match;
+                const matches = [];
+                while ((match = timeRegex.exec(line)) !== null) {
+                    matches.push(match);
                 }
-
-                renderPlaylist();
-            };
+                
+                if (matches.length > 0) {
+                    const text = line.replace(/\[\d{2,}:\d{2}(?:\.\d{1,3})?\]/g, '').trim();
+                    matches.forEach(m => {
+                        const minutes = parseInt(m[1], 10);
+                        const seconds = parseInt(m[2], 10);
+                        let msStr = m[3] || "0";
+                        let ms = parseInt(msStr, 10);
+                        if (msStr.length === 1) ms *= 100;
+                        else if (msStr.length === 2) ms *= 10;
+                        
+                        syncLyrics.push({ time: minutes * 60 + seconds + ms / 1000, text });
+                    });
+                }
+            });
+            return syncLyrics.sort((a, b) => a.time - b.time);
         }
 
-        function renderPlaylist() {
-            playlistEl.innerHTML = '';
+        function applyLrcFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const text = e.target.result;
+                const parsed = parseLrc(text);
+                
+                playlist[currentTrackIndex].lyrics = text; 
+                playlist[currentTrackIndex].syncLyrics = parsed.length > 0 ? parsed : null;
+                
+                updateLyricsDisplay(playlist[currentTrackIndex]);
+                showToast("Lirik berhasil diimpor!");
+                openLyrics();
+            };
+            reader.readAsText(file);
+        }
+
+        function updateLyricsDisplay(track) {
+            currentSyncLineIndex = -1; 
+            lyricsContainer.innerHTML = '';
+
+            if (track && track.syncLyrics && track.syncLyrics.length > 0) {
+                const ul = document.createElement('ul');
+                ul.id = 'syncLyricsList';
+                ul.className = 'space-y-5 py-[40vh] transition-transform duration-300';
+                
+                track.syncLyrics.forEach((line, idx) => {
+                    const li = document.createElement('li');
+                    li.className = 'lyric-line transition-all duration-300 text-slate-400 opacity-60 transform scale-100 cursor-pointer hover:text-blue-500 font-medium';
+                    li.textContent = line.text || '♪';
+                    li.onclick = () => {
+                        nativeAudio.currentTime = line.time;
+                        playAudio();
+                    };
+                    ul.appendChild(li);
+                });
+                lyricsContainer.appendChild(ul);
+            } else if (track && track.lyrics) {
+                lyricsContainer.innerHTML = `<div class="mx-auto whitespace-pre-line py-8 leading-relaxed max-w-sm text-slate-500">${escapeHtml(track.lyrics)}</div>`;
+            } else {
+                lyricsContainer.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full text-slate-400 py-20">
+                        <svg class="w-8 h-8 mb-2 stroke-current fill-none opacity-40" viewBox="0 0 24 24" stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 9l10-4m-10 4v4m0-4l10 4m-10 4l10 4m-10-4v4" />
+                        </svg>
+                        <p class="text-xs font-medium text-slate-500">Lirik Belum Tersedia</p>
+                        <p class="text-[11px] text-slate-400 mt-2 bg-slate-50 border border-slate-100 rounded-md px-3 py-1.5 shadow-sm max-w-[220px]">
+                            Tarik dan lepaskan file <b>.lrc</b> ke layar ini untuk menampilkan lirik interaktif.
+                        </p>
+                    </div>
+                `;
+            }
+        }
+
+        function escapeHtml(text) {
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        function updateEmptyState() {
             if (playlist.length === 0) {
-                playlistEl.innerHTML = '<li style="text-align:center; color:var(--text-muted); font-size:0.9rem; padding:40px 0;">Data kosong.</li>';
+                emptyStateView.classList.remove('hidden');
+                albumCoverContainer.classList.add('hidden');
+                playerControlsContainer.classList.add('hidden');
+                
+                albumCover.src = DEFAULT_COVER_SVG;
+                songTitle.textContent = "Belum Memutar Lagu";
+                artistName.textContent = "Silakan impor lagu";
+                currentTimeEl.textContent = "00:00";
+                durationTimeEl.textContent = "00:00";
+                seekBar.value = 0;
+                nativeAudio.pause();
+                nativeAudio.src = "";
+                setPlayingState(false);
+                lyricsContainer.innerHTML = '';
+            } else {
+                emptyStateView.classList.add('hidden');
+                albumCoverContainer.classList.remove('hidden');
+                playerControlsContainer.classList.remove('hidden');
+            }
+        }
+
+        function loadTrack(index, autoplay = false) {
+            if (playlist.length === 0) {
+                updateEmptyState();
+                renderPlaylist();
                 return;
             }
 
-            playlist.forEach((song, index) => {
-                const li = document.createElement('li');
-                li.className = `playlist-item ${index === currentIndex ? 'active' : ''}`;
-                li.innerHTML = `
-                    <div class="playlist-item-info">
-                        <div class="playlist-item-title">${song.name}</div>
-                        <div class="playlist-item-artist">${song.artist}</div>
-                    </div>
-                    <!-- Icon X (Clean) -->
-                    <button class="btn-delete" onclick="openDeleteModal(event, ${song.id})">
-                        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-                    </button>
-                `;
-                li.addEventListener('click', (e) => {
-                    if (e.target.closest('button')) return;
-                    loadSong(index);
-                    playSong();
-                    // Auto tutup playlist jika lagu diklik
-                    playlistPage.classList.remove('active');
-                    playerView.classList.remove('hidden-left');
-                });
-                playlistEl.appendChild(li);
+            currentTrackIndex = Math.max(0, Math.min(index, playlist.length - 1));
+            const track = playlist[currentTrackIndex];
+            
+            updateEmptyState();
+
+            songTitle.textContent = track.title;
+            artistName.textContent = track.artist;
+            albumCover.src = track.cover || DEFAULT_COVER_SVG;
+            updateLyricsDisplay(track);
+
+            nativeAudio.src = track.src;
+            nativeAudio.load();
+            renderPlaylist();
+
+            if (autoplay) playAudio();
+            else setPlayingState(false);
+        }
+
+        function extractTrackMetadata(file) {
+            return new Promise((resolve) => {
+                let title = file.name.replace(/\.[^/.]+$/, ""), artist = "Unknown Artist", coverUrl = DEFAULT_COVER_SVG, lyrics = null;
+                if (title.includes('-')) {
+                    const parts = title.split('-');
+                    artist = parts[0].trim(); title = parts.slice(1).join('-').trim();
+                }
+
+                if (window.jsmediatags) {
+                    window.jsmediatags.read(file, {
+                        onSuccess: (tag) => {
+                            if (tag.tags.title) title = tag.tags.title.trim();
+                            if (tag.tags.artist) artist = tag.tags.artist.trim();
+                            if (tag.tags.lyrics?.text) lyrics = tag.tags.lyrics.text;
+                            else if (tag.tags.uslt?.text) lyrics = tag.tags.uslt.text;
+
+                            if (tag.tags.picture) {
+                                let base64String = "";
+                                for (let i = 0; i < tag.tags.picture.data.length; i++) base64String += String.fromCharCode(tag.tags.picture.data[i]);
+                                coverUrl = `data:${tag.tags.picture.format};base64,${window.btoa(base64String)}`;
+                            }
+                            resolve({ title, artist, coverUrl, lyrics });
+                        },
+                        onError: () => resolve({ title, artist, coverUrl, lyrics })
+                    });
+                } else resolve({ title, artist, coverUrl, lyrics });
             });
         }
 
-        function resetPlayerState() {
-            trackTitleEl.textContent = 'Belum ada lagu';
-            trackArtistEl.textContent = 'Tambahkan musik lokal';
-            currentSongId = null;
-            resetAlbumArt();
-            playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>'; // Play Icon
-            progressBar.value = 0;
-            currentTimeEl.textContent = "00:00";
-            durationEl.textContent = "00:00";
+        function getAudioDuration(url) {
+            return new Promise((resolve) => {
+                const tempAudio = new Audio();
+                tempAudio.preload = 'metadata';
+                tempAudio.src = url;
+                tempAudio.onloadedmetadata = () => resolve(formatTime(tempAudio.duration));
+                tempAudio.onerror = () => resolve('00:00');
+            });
         }
 
-        function loadSong(index) {
-            if (index < 0 || index >= playlist.length) return;
-            currentIndex = index;
-            const song = playlist[currentIndex];
-            currentSongId = song.id;
+        async function processFiles(audioFiles) {
+            if (audioFiles.length === 0) return;
+            const wasEmpty = playlist.length === 0;
+            const total = audioFiles.length;
+            const circumference = 2 * Math.PI * 45;
+            
+            loadingOverlay.classList.remove('opacity-0', 'pointer-events-none');
+            loadingOverlay.classList.add('opacity-100', 'pointer-events-auto');
 
-            trackTitleEl.textContent = song.name;
-            trackArtistEl.textContent = song.artist;
+            for (let i = 0; i < total; i++) {
+                const file = audioFiles[i];
+                const url = URL.createObjectURL(file);
+                const metadata = await extractTrackMetadata(file);
+                const duration = await getAudioDuration(url);
 
-            if (song.picture) {
-                albumArtContainer.innerHTML = `<img src="${song.picture}" alt="Album Art">`;
-            } else {
-                resetAlbumArt();
+                let syncLyrics = null;
+                if (metadata.lyrics) {
+                    const parsed = parseLrc(metadata.lyrics);
+                    if (parsed.length > 0) syncLyrics = parsed;
+                }
+
+                playlist.push({
+                    title: metadata.title, artist: metadata.artist, src: url,
+                    cover: metadata.coverUrl, lyrics: metadata.lyrics, syncLyrics: syncLyrics, duration: duration
+                });
+
+                const percent = Math.round(((i + 1) / total) * 100);
+                loadingText.textContent = `${percent}%`;
+                loadingProgressCircle.style.strokeDashoffset = circumference - (percent / 100) * circumference;
             }
 
-            audio.src = URL.createObjectURL(song.file);
-            renderPlaylist(); // Update warna aktif di daftar
+            renderPlaylist();
+
+            setTimeout(() => {
+                loadingOverlay.classList.remove('opacity-100', 'pointer-events-auto');
+                loadingOverlay.classList.add('opacity-0', 'pointer-events-none');
+                
+                setTimeout(() => {
+                    loadingText.textContent = `0%`;
+                    loadingProgressCircle.style.strokeDashoffset = circumference;
+                }, 300);
+            }, 400);
+
+            if (wasEmpty && playlist.length > 0) {
+                loadTrack(0, true);
+            }
         }
 
-        function resetAlbumArt() {
-            albumArtContainer.innerHTML = `<svg class="default-icon" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>`;
-        }
-
-        function togglePlayPause() {
-            if (playlist.length === 0) return;
-            if (audio.paused) playSong();
-            else pauseSong();
-        }
-
-        function playSong() {
-            if (!audio.src && playlist.length > 0) loadSong(currentIndex);
-            audio.play().then(() => {
-                // Ikon Pause 
-                playIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
-            }).catch(err => console.log(err));
-        }
-
-        function pauseSong() {
-            audio.pause();
-            // Ikon Play
-            playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
-        }
-
-        playPauseBtn.addEventListener('click', togglePlayPause);
-
-        prevBtn.addEventListener('click', () => {
-            if (playlist.length === 0) return;
-            currentIndex = (currentIndex - 1 + playlist.length) % playlist.length;
-            loadSong(currentIndex);
-            playSong();
+        let dragCounter = 0;
+        window.addEventListener('dragenter', (e) => {
+            e.preventDefault(); dragCounter++;
+            dragDropOverlay.classList.remove('opacity-0'); dragDropOverlay.classList.add('opacity-100');
         });
-
-        nextBtn.addEventListener('click', () => {
-            if (playlist.length === 0) return;
-            currentIndex = (currentIndex + 1) % playlist.length;
-            loadSong(currentIndex);
-            playSong();
+        window.addEventListener('dragleave', (e) => {
+            e.preventDefault(); dragCounter--;
+            if (dragCounter <= 0) { dragCounter = 0; dragDropOverlay.classList.remove('opacity-100'); dragDropOverlay.classList.add('opacity-0'); }
         });
+        window.addEventListener('dragover', (e) => e.preventDefault());
+        
+        window.addEventListener('drop', (e) => {
+            e.preventDefault(); dragCounter = 0;
+            dragDropOverlay.classList.remove('opacity-100'); dragDropOverlay.classList.add('opacity-0');
 
-        audio.addEventListener('ended', () => {
-            if (playlist.length > 0) nextBtn.click();
-        });
+            if (e.dataTransfer && e.dataTransfer.files) {
+                const files = Array.from(e.dataTransfer.files);
+                
+                const lrcFiles = files.filter(f => f.name.toLowerCase().endsWith('.lrc') || f.name.toLowerCase().endsWith('.txt'));
+                const audioFiles = files.filter(f => f.type.startsWith('audio/') || /\.(mp3|wav|ogg|m4a|aac|flac)$/i.test(f.name));
 
-        audio.addEventListener('timeupdate', () => {
-            if (audio.duration) {
-                progressBar.value = (audio.currentTime / audio.duration) * 100;
-                currentTimeEl.textContent = formatTime(audio.currentTime);
-                durationEl.textContent = formatTime(audio.duration);
+                if (lrcFiles.length > 0) {
+                    if (playlist.length === 0) {
+                        showToast("Impor lagu terlebih dahulu sebelum menambahkan lirik.");
+                    } else {
+                        applyLrcFile(lrcFiles[0]);
+                    }
+                }
+
+                if (audioFiles.length > 0) processFiles(audioFiles);
             }
         });
 
-        progressBar.addEventListener('input', () => {
-            if (audio.duration) {
-                audio.currentTime = (progressBar.value / 100) * audio.duration;
-            }
-        });
-
-        function formatTime(seconds) {
-            const minutes = Math.floor(seconds / 60);
-            const remainingSeconds = Math.floor(seconds % 60);
-            return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+        function playAudio() {
+            if (playlist.length === 0) return;
+            nativeAudio.play().then(() => setPlayingState(true)).catch(() => setPlayingState(false));
         }
+
+        function pauseAudio() {
+            nativeAudio.pause();
+            setPlayingState(false);
+        }
+
+        function nextTrack() {
+            if (playlist.length > 0) loadTrack((currentTrackIndex + 1) % playlist.length, true);
+        }
+
+        function prevTrack() {
+            if (playlist.length === 0) return;
+            if (nativeAudio.currentTime > 3) nativeAudio.currentTime = 0;
+            else loadTrack((currentTrackIndex - 1 + playlist.length) % playlist.length, true);
+        }
+
+        function renderPlaylist() {
+            playlistContainer.innerHTML = '';
+            if (playlist.length === 0) {
+                playlistContainer.innerHTML = `<div class="text-center py-20 text-slate-400"><p class="text-xs font-medium">Kosong</p></div>`;
+                return;
+            }
+            playlist.forEach((track, idx) => {
+                const isCurrent = idx === currentTrackIndex;
+                const row = document.createElement('div');
+                row.className = `py-2.5 px-1.5 border-b border-slate-100 flex items-center justify-between cursor-pointer transition-colors duration-150 ${isCurrent ? 'bg-blue-50/40 text-blue-600' : 'hover:bg-blue-50/30 text-slate-700'}`;
+                row.innerHTML = `
+                    <div class="flex items-center space-x-3 min-w-0 pr-2">
+                        <img src="${track.cover || DEFAULT_COVER_SVG}" class="w-9 h-9 rounded object-cover flex-shrink-0 bg-slate-100 border border-slate-100" />
+                        <div class="min-w-0"><p class="text-xs ${isCurrent ? 'font-semibold text-blue-600' : 'font-medium'} truncate">${track.title}</p><p class="text-[10px] text-slate-400 truncate mt-0.5">${track.artist}</p></div>
+                    </div>
+                    <span class="text-[10px] font-mono text-slate-400 flex-shrink-0 pl-2">${track.duration || '--:--'}</span>
+                `;
+                row.onclick = () => loadTrack(idx, true);
+                playlistContainer.appendChild(row);
+            });
+        }
+
+        document.getElementById('emptyTriggerBtn').onclick = () => filePickerInput.click();
+        document.getElementById('menuAddFiles').onclick = () => { kebabDropdown.classList.add('hidden'); filePickerInput.click(); };
+        filePickerInput.onchange = (e) => { if (e.target.files) { processFiles(Array.from(e.target.files)); filePickerInput.value = ''; } };
+        
+        document.getElementById('menuClearAll').onclick = () => { 
+            kebabDropdown.classList.add('hidden'); 
+            playlist = []; 
+            updateEmptyState(); 
+            renderPlaylist();
+            playlistView.classList.add('translate-y-full');
+            showToast("Daftar putar dikosongkan."); 
+        };
+        
+        btnPlayPause.onclick = () => {
+            if (playlist.length === 0) return filePickerInput.click();
+            isPlaying ? pauseAudio() : playAudio();
+        };
+        btnPrev.onclick = prevTrack; btnNext.onclick = nextTrack;
+        nativeAudio.onended = nextTrack;
+
+        nativeAudio.ontimeupdate = () => {
+            if (!nativeAudio.duration) return;
+            const current = nativeAudio.currentTime;
+            currentTimeEl.textContent = formatTime(current);
+            durationTimeEl.textContent = formatTime(nativeAudio.duration);
+            seekBar.value = (current / nativeAudio.duration) * 100;
+
+            if (playlist[currentTrackIndex]?.syncLyrics) {
+                const syncLyrics = playlist[currentTrackIndex].syncLyrics;
+                let activeIdx = -1;
+                for (let i = 0; i < syncLyrics.length; i++) {
+                    if (current >= syncLyrics[i].time) activeIdx = i;
+                    else break;
+                }
+
+                if (activeIdx !== -1 && activeIdx !== currentSyncLineIndex) {
+                    currentSyncLineIndex = activeIdx;
+                    const listItems = document.querySelectorAll('.lyric-line');
+                    listItems.forEach((li, idx) => {
+                        if (idx === activeIdx) {
+                            li.classList.add('text-blue-600', 'scale-[1.15]', 'opacity-100', 'font-bold');
+                            li.classList.remove('text-slate-400', 'opacity-60', 'scale-100', 'font-medium');
+                            const scrollPos = li.offsetTop - (lyricsContainer.clientHeight / 2) + (li.clientHeight / 2);
+                            lyricsContainer.scrollTo({ top: scrollPos, behavior: 'smooth' });
+                        } else {
+                            li.classList.remove('text-blue-600', 'scale-[1.15]', 'opacity-100', 'font-bold');
+                            li.classList.add('text-slate-400', 'opacity-60', 'scale-100', 'font-medium');
+                        }
+                    });
+                }
+            }
+        };
+
+        seekBar.oninput = (e) => { if (nativeAudio.duration) nativeAudio.currentTime = (e.target.value / 100) * nativeAudio.duration; };
+
+        document.getElementById('btnOpenPlaylist').onclick = () => playlistView.classList.remove('translate-y-full');
+        document.getElementById('btnClosePlaylist').onclick = () => { playlistView.classList.add('translate-y-full'); kebabDropdown.classList.add('hidden'); };
+        
+        const openLyrics = () => { lyricsView.classList.remove('translate-y-full'); lyricsView.style.transform = 'translateY(0px)'; };
+        const closeLyrics = () => { lyricsView.classList.add('translate-y-full'); lyricsView.style.transform = ''; };
+        
+        document.getElementById('btnOpenLyrics').onclick = openLyrics;
+        songTitle.onclick = openLyrics;
+        document.getElementById('btnCloseLyrics').onclick = closeLyrics;
+
+        const dragHandle = document.getElementById('lyricsDragHandle');
+        let startY = 0, isDragging = false;
+        
+        const onTouchStart = (e) => { isDragging = true; startY = e.touches ? e.touches[0].clientY : e.clientY; lyricsView.style.transition = 'none'; };
+        const onTouchMove = (e) => { if (isDragging) { const diff = (e.touches ? e.touches[0].clientY : e.clientY) - startY; if (diff > 0) lyricsView.style.transform = `translateY(${diff}px)`; } };
+        const onTouchEnd = (e) => { 
+            if (!isDragging) return; isDragging = false;
+            lyricsView.style.transition = 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
+            const diff = (e.changedTouches ? e.changedTouches[0].clientY : e.clientY) - startY;
+            if (diff > 120) closeLyrics(); else lyricsView.style.transform = 'translateY(0px)';
+        };
+
+        dragHandle.addEventListener('touchstart', onTouchStart, {passive: true}); window.addEventListener('touchmove', onTouchMove, {passive: true}); window.addEventListener('touchend', onTouchEnd);
+        dragHandle.addEventListener('mousedown', onTouchStart); window.addEventListener('mousemove', onTouchMove); window.addEventListener('mouseup', onTouchEnd);
+
+        document.getElementById('btnKebabMenu').onclick = (e) => { e.stopPropagation(); kebabDropdown.classList.toggle('hidden'); };
+        document.addEventListener('click', (e) => { if (!kebabDropdown.contains(e.target) && !document.getElementById('btnKebabMenu').contains(e.target)) kebabDropdown.classList.add('hidden'); });
+
+        window.addEventListener('DOMContentLoaded', () => { updateEmptyState(); renderPlaylist(); });
     </script>
 </body>
 </html>
