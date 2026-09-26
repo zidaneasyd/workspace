@@ -1,2115 +1,2180 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Task Manager - Minimalist Workspace</title>
-  <style>
-    /* =========================================
-       1. VARIABLES & RESET
-       ========================================= */
-    :root {
-      --bg-body: #ffffff; 
-      --bg-card: #ffffff;
-      --bg-empty: #ffffff;
-      --primary: #2563eb;
-      --primary-glow: rgba(37, 99, 235, 0.1);
-      --primary-border: rgba(37, 99, 235, 0.4);
-      --success: #059669;
-      --text-main: #1f2937;
-      --text-muted: #6b7280;
-      --border-color: #d1d5db; 
-      --border-light: #f3f4f6; 
-      --border-medium: #e5e7eb;
-      --icon-color: #9ca3af;
-      --sidebar-w: 72px;
-      --header-h: 60px;
-      --mobile-nav-h: 64px;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    
-    /* HILANGKAN SCROLLBAR GLOBAL */
-    * { scrollbar-width: none; -ms-overflow-style: none; }
-    *::-webkit-scrollbar { display: none; }
-
-    body {
-      background-color: var(--bg-body);
-      overflow: hidden; height: 100vh; width: 100vw;
-      color: var(--text-main);
-      transition: background 0.15s ease-in-out;
-    }
-
-    /* =========================================
-       TEMA LATAR BELAKANG (SOLID + BLUR CUSTOM)
-       ========================================= */
-    body.has-bg { background-color: #1f2937; }
-    body.has-bg .universal-header,
-    body.has-bg .sidebar {
-      background-color: var(--bg-card) !important;
-      backdrop-filter: none !important;
-      border-color: rgba(0, 0, 0, 0.05);
-    }
-    body.has-bg .col-wrapper {
-      background-color: rgba(255, 255, 255, 0.94);
-      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-      border-color: rgba(255, 255, 255, 0.6);
-    }
-    body.has-bg .col-header, body.has-bg .col-footer {
-      background-color: transparent; border-color: rgba(255, 255, 255, 0.5);
-    }
-    body.has-bg .card, body.has-bg .subtask-card {
-      background-color: rgba(255, 255, 255, 0.97); border-color: rgba(255, 255, 255, 0.8);
-    }
-    body.has-bg .card:hover, body.has-bg .subtask-card:hover {
-      background-color: #ffffff; border-color: var(--primary-border);
-    }
-
-    /* =========================================
-       2. LAYOUT UTAMA (HEADER 100% & APP BODY)
-       ========================================= */
-    .app-wrapper { 
-      display: flex; flex-direction: column; height: 100vh; width: 100%; 
-      background-color: var(--bg-body);
-    }
-
-    /* HEADER UNIVERSAL Paling Atas */
-    .universal-header {
-      height: var(--header-h); background-color: var(--bg-card);
-      border-bottom: 1px solid var(--border-medium);
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 24px; flex-shrink: 0; z-index: 1000;
-    }
-    
-    .header-brand { display: flex; align-items: center; gap: 12px; font-size: 16px; font-weight: 700; color: var(--text-main); letter-spacing: -0.3px; }
-    
-    .app-body { display: flex; flex: 1; overflow: hidden; width: 100%; }
-
-    /* SIDEBAR MENU */
-    .sidebar {
-      width: var(--sidebar-w); background-color: var(--bg-card);
-      border-right: 1px solid var(--border-medium);
-      display: flex; flex-direction: column; align-items: center;
-      padding: 24px 0; gap: 12px; z-index: 500; flex-shrink: 0;
-    }
-    .nav-item {
-      width: 44px; height: 44px; border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      color: var(--icon-color); cursor: pointer; transition: background-color 0.15s ease, color 0.15s ease;
-    }
-    .nav-item:hover { background-color: var(--border-light); color: var(--text-main); }
-    .nav-item.active { background-color: #eff6ff; color: var(--primary); }
-
-    /* KONTEN UTAMA (RUANG KERJA) */
-    .main-content { flex: 1; display: flex; flex-direction: column; height: 100%; overflow: hidden; position: relative; }
-
-    .main-grid { flex: 1; display: grid; grid-template-columns: 3fr 5fr 2fr; height: 100%; overflow: hidden; padding: 24px; gap: 24px; }
-    .home-layout { flex: 1; display: none; grid-template-columns: 7fr 3fr; height: 100%; overflow: hidden; padding: 24px; gap: 24px; }
-
-    /* KOLOM & PEMBATAS MINIMALIS */
-    .col-wrapper {
-      display: flex; flex-direction: column; height: 100%; 
-      background-color: var(--bg-card); position: relative;
-      border-radius: 16px; border: 1px solid var(--border-medium); overflow: hidden; 
-    }
-    .col-wrapper:last-child { background-color: var(--bg-card); border-style: dashed; }
-
-    .col-header {
-      background-color: transparent; padding: 0 24px; border-bottom: 1px solid var(--border-light);
-      font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: space-between;
-      flex-shrink: 0; z-index: 10; height: 60px; 
-    }
-    .col-body { flex: 1; overflow-y: auto; position: relative; padding: 24px 20px; }
-
-    /* =========================================
-       3. BUTTON STYLES
-       ========================================= */
-    .btn-action {
-      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-      padding: 0 16px; height: 36px; background: transparent;
-      border: 1px solid var(--border-medium); border-radius: 8px;
-      font-size: 13px; font-weight: 500; color: var(--text-main);
-      cursor: pointer; outline: none; white-space: nowrap;
-      transition: background-color 0.15s ease, border-color 0.15s ease;
-    }
-    .btn-action:hover { background: var(--border-light); border-color: var(--border-color); }
-    .btn-action svg { stroke: currentColor; stroke-width: 2; width: 14px; height: 14px; }
-    .btn-action.icon-only { padding: 0; width: 36px; }
-
-    .btn-action-sm { height: 30px; padding: 0 12px; font-size: 11px; }
-    .btn-action-sm svg { width: 12px; height: 12px; }
-    .btn-action-sm.icon-only { width: 30px; padding: 0; }
-    .btn-action-sm span { font-size: 11px !important; }
-
-    .status-group { display: flex; align-items: stretch; }
-    .status-group .btn-action { border-radius: 0; margin: 0; }
-    .status-group .btn-action:first-child { border-radius: 6px 0 0 6px; border-right: none; }
-    .status-group .btn-action:last-child { border-radius: 0 6px 6px 0; border-left: none; }
-    .status-group .btn-action:not(:first-child):not(:last-child) { border-left: 1px solid var(--border-medium); border-right: 1px solid var(--border-medium); }
-
-    .col-footer { display: flex; align-items: center; justify-content: flex-end; padding: 16px 24px; border-top: 1px solid var(--border-light); background: transparent; z-index: 10; }
-    .btn-primary-full {
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      width: max-content; padding: 0 28px; height: 40px; border-radius: 8px; border: none;
-      background: var(--primary); color: #ffffff; font-size: 14px; font-weight: 600;
-      cursor: pointer; transition: 0.15s ease;
-    }
-    .btn-primary-full:hover { background: #1d4ed8; }
-    .btn-primary-full svg { stroke: currentColor; stroke-width: 2; width: 16px; height: 16px; }
-    .btn-primary-full.is-done { background: var(--success); }
-    .btn-primary-full.is-done:hover { background: #047857; }
-
-    /* =========================================
-       4. DAFTAR KARTU & HOME GALLERY
-       ========================================= */
-    .card-list { display: flex; flex-direction: column; gap: 12px; padding-bottom: 80px; }
-    .card {
-      background-color: var(--bg-card); border-radius: 12px; padding: 16px;
-      display: flex; align-items: center; gap: 12px;
-      user-select: none; touch-action: none; cursor: pointer;
-      border: 1px solid var(--border-medium); 
-      transition: border-color 0.15s ease;
-    }
-    .card:hover { border-color: var(--icon-color); }
-    .card.is-active { border-color: var(--primary); }
-    .card.dragging { z-index: 100; transition: none !important; transform: scale(1.02); background-color: var(--bg-card); cursor: grabbing !important; box-shadow: 0 12px 24px rgba(0,0,0,0.05); }
-    .card-placeholder { border: 1px dashed #bfdbfe; background-color: #eff6ff; border-radius: 12px; box-sizing: border-box; }
-    
-    .completed-label { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-top: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; gap: 6px; }
-    .card.is-completed { background-color: var(--bg-body); border-color: var(--border-light); cursor: pointer; }
-    .card.is-completed .item-title { text-decoration: line-through; color: var(--icon-color); }
-    .card.is-completed .badge-status { background-color: var(--icon-color) !important; }
-
-    .drag-handle { cursor: grab; display: flex; color: var(--icon-color); padding: 2px; flex-shrink: 0; }
-    .drag-handle:active { cursor: grabbing; }
-    .card-content { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-    .content-top { display: flex; align-items: center; gap: 10px; }
-    .item-qty { width: 48px; flex-shrink: 0; font-size: 12px; font-weight: 600; color: var(--text-muted); }
-    .item-title { font-size: 14px; font-weight: 600; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color 0.15s ease; }
-    .content-bottom { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .badge-status { color: #ffffff; font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 6px; transition: background-color 0.15s ease; text-transform: uppercase;}
-    .meta-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-muted); line-height: 1; }
-    .item-datetime { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; flex-shrink: 0; line-height: 1.4; text-align: right; font-size: 11px; color: var(--text-muted); }
-
-    /* Home Gallery Cards */
-    .home-card-item {
-      display: flex; flex-direction: column; gap: 8px; cursor: pointer;
-      transition: transform 0.15s ease; will-change: transform;
-    }
-    .home-card-item:hover { transform: translateY(-4px); }
-
-    /* =========================================
-       5. RUANG KERJA (KOLOM TENGAH)
-       ========================================= */
-    .info-empty { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--icon-color); font-size: 14px; gap: 12px; text-align: center; padding: 20px;}
-    .info-detail-view { display: none; flex-direction: column; padding: 0 8px; flex: 1; overflow: hidden; animation: fadeIn 0.15s ease; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-    .editor-row { display: flex; align-items: baseline; gap: 12px; width: 100%; }
-    .editor-title { flex: 1; font-size: 26px !important; font-weight: 700 !important; color: var(--text-main); min-width: 0; letter-spacing: -0.5px;}
-    .editor-qty-wrapper { display: flex; align-items: baseline; gap: 4px; font-size: 20px; font-weight: 600; color: var(--primary); flex-shrink: 0;}
-    .editor-qty-wrapper input { width: 50px; text-align: right; color: var(--primary); }
-    
-    .clean-input {
-      border: none; background: transparent; outline: none; box-shadow: none;
-      color: inherit; font-family: inherit; font-size: inherit; font-weight: inherit;
-      padding: 0; margin: 0; display: block; width: 100%; transition: color 0.15s ease;
-    }
-    .clean-input::placeholder { color: var(--icon-color); }
-    .clean-input[type=number]::-webkit-inner-spin-button, .clean-input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-
-    .action-row { 
-      display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; margin-top: 12px;
-      padding-bottom: 20px; border-bottom: 1px solid var(--border-light);
-      flex-shrink: 0;
-    }
-    
-    .desc-subtask-grid { display: grid; grid-template-columns: 55fr 45fr; gap: 32px; width: 100%; flex: 1; overflow: hidden; margin-bottom: 8px; align-items: stretch;}
-    
-    /* Scroll Mandiri Area */
-    .scroll-area-y {
-      flex: 1; width: 100%; overflow-y: auto; overflow-x: hidden; padding-right: 6px;
-    }
-    
-    /* Subtask UI */
-    .subtask-list { display: flex; flex-direction: column; gap: 8px; }
-    .subtask-card { 
-      display: flex; align-items: center; gap: 12px; padding: 12px 14px; 
-      background: transparent; border: 1px solid var(--border-medium); border-radius: 8px; 
-      transition: border-color 0.15s ease;
-      flex-shrink: 0;
-    }
-    .subtask-card:hover { border-color: var(--icon-color); }
-    
-    .subtask-checkbox {
-      appearance: none; -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border-color);
-      background: transparent; position: relative; cursor: pointer; flex-shrink: 0; transition: all 0.15s ease; margin: 0; outline: none;
-    }
-    .subtask-checkbox:checked { background: var(--primary); border-color: var(--primary); }
-    .subtask-checkbox::after {
-      content: ''; position: absolute; top: 2px; left: 5px; width: 3px; height: 7px;
-      border: solid #ffffff; border-width: 0 2px 2px 0; transform: rotate(45deg); opacity: 0; transition: opacity 0.15s ease;
-    }
-    .subtask-checkbox:checked::after { opacity: 1; }
-
-    .subtask-input { flex: 1; border: none; outline: none; font-size: 13px; color: var(--text-main); background: transparent; min-width: 0; transition: color 0.15s ease; }
-    .subtask-card.is-done { background: var(--bg-body); border-color: var(--border-light); }
-    .subtask-card.is-done .subtask-input { text-decoration: line-through; color: var(--icon-color); }
-    
-    .btn-del-subtask { 
-      background: transparent; border: none; color: var(--icon-color); cursor: pointer; 
-      padding: 2px; flex-shrink: 0; transition: opacity 0.15s ease, visibility 0.15s; opacity: 0; visibility: hidden; 
-    }
-    .btn-del-subtask svg { width: 12px; height: 12px; stroke-width: 2.5; }
-    .subtask-card:hover .btn-del-subtask { opacity: 1; visibility: visible; }
-    .btn-del-subtask:hover { color: #dc2626; }
-
-    .btn-add-subtask {
-      display: flex; align-items: center; justify-content: flex-start; gap: 10px; padding: 12px 14px; width: 100%;
-      background: transparent; border: 1px dashed var(--border-medium); border-radius: 8px; 
-      color: var(--text-muted); font-size: 13px; font-weight: 500; cursor: pointer; 
-      transition: background-color 0.15s ease, color 0.15s ease;
-    }
-    .btn-add-subtask:hover { background: var(--border-light); color: var(--text-main); }
-
-    /* =========================================
-       6. FITUR LAMPIRAN & APP LAUNCHER
-       ========================================= */
-    .media-item { position: relative; width: 100%; margin-bottom: 20px; animation: fadeIn 0.15s ease; }
-    .media-thumbnail { 
-      width: 100%; height: auto; display: block; cursor: pointer; transition: opacity 0.15s ease; 
-      border: 1px solid var(--border-medium) !important; border-radius: 8px !important; background: transparent !important;
-    }
-    .media-thumbnail:hover { opacity: 0.85; }
-    
-    .media-menu-wrapper { position: absolute; top: 8px; right: 8px; z-index: 10; opacity: 0; transition: opacity 0.15s ease; }
-    .media-item:hover .media-menu-wrapper { opacity: 1; }
-    .media-menu-btn { 
-      background: rgba(255, 255, 255, 0.9); color: var(--text-main); border: 1px solid var(--border-medium); border-radius: 6px; 
-      width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; 
-      cursor: pointer; transition: background-color 0.15s ease;
-    }
-    .media-menu-btn:hover { background: #ffffff; }
-    
-    .media-dropdown { 
-      position: absolute; top: 100%; right: 0; margin-top: 6px; background: white; border: 1px solid var(--border-medium); 
-      border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); display: flex; flex-direction: column; overflow: hidden; min-width: 100px;
-      opacity: 0; visibility: hidden; transform: translateY(-5px); transition: all 0.15s ease;
-    }
-    .media-menu-wrapper:hover .media-dropdown { opacity: 1; visibility: visible; transform: translateY(0); }
-    .media-dropdown button { 
-      padding: 10px 14px; border: none; background: white; text-align: left; font-size: 12px; cursor: pointer; color: #dc2626; font-weight: 500; 
-      display: flex; align-items: center; gap: 8px; transition: background-color 0.15s ease;
-    }
-    .media-dropdown button:hover { background: #fef2f2; }
-
-    /* App Launcher Dropdown */
-    .app-launcher-menu {
-      position: absolute; top: 0px; right: 44px; 
-      width: 280px;
-      background: rgba(255,255,255,0.98); border-radius: 16px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.08); z-index: 2000; border: 1px solid var(--border-medium);
-      opacity: 0; visibility: hidden; transform: translateY(10px) scale(0.95);
-      transition: all 0.2s cubic-bezier(0.2, 0, 0, 1); transform-origin: top right;
-      padding: 24px; overflow: hidden;
-    }
-    .app-launcher-menu.is-open { opacity: 1; visibility: visible; transform: translateY(0) scale(1); }
-    
-    /* Expanded mode for Iframe */
-    .app-launcher-menu.is-expanded { height: calc(100vh - 24px); padding: 0; display: flex; flex-direction: column; }
-    
-    .app-launcher-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px 12px; }
-    .app-icon { display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; }
-    .app-icon-box { 
-      width: 48px; height: 48px; background: transparent; border-radius: 14px; 
-      display: flex; align-items: center; justify-content: center; transition: all 0.15s ease; border: 1px solid var(--border-medium); color: var(--icon-color);
-    }
-    .app-icon:hover .app-icon-box { background: var(--border-light); color: var(--primary); border-color: var(--border-color); }
-    .app-icon span { font-size: 11px; color: var(--text-main); font-weight: 500; text-align: center; }
-
-    /* =========================================
-       7. FAB, MODALS & TOAST
-       ========================================= */
-    .fab {
-      position: absolute; bottom: 24px; right: 24px;
-      width: 52px; height: 52px; border-radius: 50%; background-color: var(--primary); color: #ffffff;
-      display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px var(--primary-glow);
-      cursor: pointer; z-index: 200; transition: transform 0.15s ease;
-    }
-    .fab:active { transform: scale(0.92); }
-    
-    .modal-overlay {
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(15, 23, 42, 0.4); backdrop-filter: blur(2px);
-      display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.15s ease; z-index: 3000; padding: 16px;
-    }
-    .modal-overlay.is-open { opacity: 1; pointer-events: auto; }
-    .modal-panel { 
-      background: var(--bg-card); width: 100%; max-width: 380px; border-radius: 16px; padding: 24px; 
-      transform: translateY(10px) scale(0.98); transition: transform 0.15s ease; border: 1px solid var(--border-medium);
-    }
-    .modal-overlay.is-open .modal-panel { transform: translateY(0) scale(1); }
-    
-    .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
-    .form-group label { font-size: 12px; font-weight: 600; color: var(--text-main); }
-    .form-group input, .form-group select { padding: 12px 14px; border: 1px solid var(--border-medium); border-radius: 8px; font-size: 14px; outline: none; background: transparent; transition: border-color 0.15s;}
-    .form-group input:focus, .form-group select:focus { border-color: var(--primary); }
-    
-    .custom-date-grid { display: flex; gap: 8px; width: 100%; }
-    .custom-date-grid > * { flex: 1; min-width: 0; }
-    .custom-date-grid select { flex: 1.5; }
-    .custom-time-grid { display: flex; align-items: center; gap: 8px; width: 100%; }
-    .custom-time-grid input { flex: 1; min-width: 0; text-align: center; }
-
-    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 28px; }
-    .btn { padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: 0.15s ease;}
-    .btn-cancel { background: transparent; color: var(--text-main); border-color: var(--border-medium); }
-    .btn-cancel:hover { background: var(--border-light); }
-    .btn-submit { background: var(--primary); color: #fff; }
-    .btn-submit:hover { background: #1d4ed8; }
-
-    /* Modal Preview Gambar */
-    .modal-preview {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(15, 23, 42, 0.85); z-index: 4000;
-      display: flex; align-items: center; justify-content: center;
-      opacity: 0; pointer-events: none; transition: opacity 0.15s ease;
-    }
-    .modal-preview.is-open { opacity: 1; pointer-events: auto; }
-    .preview-container { 
-      width: 60%; height: 90%; background: #ffffff; border-radius: 12px; 
-      display: flex; align-items: center; justify-content: center; 
-      overflow: hidden; position: relative; 
-      transform: scale(0.98); transition: transform 0.15s ease;
-    }
-    .modal-preview.is-open .preview-container { transform: scale(1); }
-    .preview-close {
-      position: absolute; top: 16px; right: 16px; background: rgba(0,0,0,0.4); color: #fff;
-      border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
-      cursor: pointer; z-index: 4010; transition: background-color 0.15s ease;
-    }
-    .preview-close:hover { background: rgba(0,0,0,0.8); }
-    .preview-image { width: 100%; height: 100%; object-fit: contain; cursor: grab; }
-    .preview-image:active { cursor: grabbing; }
-
-    .toast {
-      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px);
-      background: #1f2937; color: #fff; padding: 12px 24px; border-radius: 8px;
-      font-size: 13px; font-weight: 500; z-index: 5000;
-      opacity: 0; transition: all 0.2s ease; display: flex; align-items: center; gap: 8px;
-    }
-    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-
-    /* =========================================
-       8. MOBILE RESPONSIVE
-       ========================================= */
-    .sheet-backdrop { display: none; }
-    .close-sheet-btn { display: none; }
-
-    @media (max-width: 991px) {
-      .universal-header { padding: 0 16px; }
-      .sidebar {
-        width: 100%; height: var(--mobile-nav-h); flex-direction: row; justify-content: space-around;
-        padding: 0; gap: 0; border-right: none; border-top: 1px solid var(--border-medium);
-        order: 3; position: fixed; bottom: 0; left: 0; z-index: 500;
-      }
-      .nav-item { flex: 1; border-radius: 0; }
-      .nav-item.active { background-color: transparent; color: var(--primary); border-top: 2px solid var(--primary); }
-
-      .main-content { height: calc(100vh - var(--header-h) - var(--mobile-nav-h)); }
-      .main-grid { grid-template-columns: 1fr; padding: 16px; gap: 16px; }
-      .home-layout { grid-template-columns: 1fr; padding: 16px; gap: 16px; }
-      .col-wrapper:nth-child(3) { display: none; } 
-      .home-layout .col-wrapper:nth-child(2) { display: none; } 
-      .fab { position: fixed; bottom: calc(var(--mobile-nav-h) + 20px); right: 20px; } 
-
-      .sheet-backdrop {
-        display: block; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-        background-color: rgba(15, 23, 42, 0.4); backdrop-filter: blur(2px);
-        z-index: 600; opacity: 0; pointer-events: none; transition: opacity 0.15s ease;
-      }
-      .sheet-backdrop.is-open { opacity: 1; pointer-events: auto; }
-
-      .main-grid .col-wrapper:nth-child(2) {
-        position: fixed; bottom: 0; left: 0; width: 100%; height: 85vh; 
-        z-index: 601; border-radius: 20px 20px 0 0 !important; border: none !important; box-shadow: 0 -10px 40px rgba(0,0,0,0.1) !important;
-        transform: translateY(100%); transition: transform 0.2s ease;
-      }
-      .main-grid .col-wrapper:nth-child(2).is-open { transform: translateY(0); }
-      .main-grid .col-wrapper:nth-child(2) .col-header { border-radius: 20px 20px 0 0; }
-      
-      .close-sheet-btn { display: flex; background: transparent; border: none; align-items: center; justify-content: center; color: var(--icon-color); cursor: pointer; padding: 0;}
-      .editor-row { flex-direction: column; gap: 4px; align-items: flex-start; }
-      .action-row { overflow-x: auto; padding-bottom: 12px; flex-wrap: nowrap; } 
-      
-      .desc-subtask-grid { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; gap: 16px; }
-      
-      .preview-container { width: 100%; height: 100%; border-radius: 0; } 
-      .app-launcher-menu { right: 16px; top: 52px; } 
-    }
-
-    /* =========================================
-       9. RESPONSIVE HARDENING / FLEXBOX SAFETY
-       ========================================= */
-    html {
-      width: 100%;
-      min-height: 100%;
-      -webkit-text-size-adjust: 100%;
-      text-size-adjust: 100%;
-      overscroll-behavior: none;
-    }
-
-    body, button, input, select, textarea {
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .app-wrapper, .app-body, .main-content, .main-grid, .home-layout,
-    .col-wrapper, .col-body, .info-detail-view, .desc-subtask-grid,
-    .scroll-area-y, .card-content {
-      min-width: 0;
-      min-height: 0;
-    }
-
-    .app-body, .main-content, .main-grid, .home-layout, .col-wrapper {
-      overflow: hidden;
-    }
-
-    .main-grid {
-      grid-template-columns:
-        minmax(260px, 3fr)
-        minmax(340px, 5fr)
-        minmax(220px, 2fr);
-    }
-
-    .col-body {
-      overflow-x: hidden;
-    }
-
-    .card {
-      touch-action: manipulation;
-      min-width: 0;
-    }
-
-    .drag-handle {
-      touch-action: none;
-    }
-
-    .content-top, .content-bottom, .action-row, .status-group {
-      min-width: 0;
-    }
-
-    .status-group {
-      flex-shrink: 0;
-    }
-
-    .status-group .btn-action {
-      flex-shrink: 0;
-    }
-
-    .modal-panel {
-      max-height: min(90dvh, 680px);
-      overflow-y: auto;
-      overscroll-behavior: contain;
-    }
-
-    @media (max-width: 1199px) and (min-width: 992px) {
-      .universal-header { padding-inline: 18px; }
-      .main-grid, .home-layout { padding: 18px; gap: 18px; }
-      .main-grid {
-        grid-template-columns:
-          minmax(230px, 2.8fr)
-          minmax(330px, 4.8fr)
-          minmax(210px, 2.4fr);
-      }
-      .col-header { padding-inline: 18px; }
-      .col-body { padding: 18px 16px; }
-    }
-
-    @media (max-width: 991px) {
-      :root {
-        --mobile-nav-h: 64px;
-      }
-
-      body {
-        width: 100%;
-        height: 100dvh;
-        min-height: 100dvh;
-        overflow: hidden;
-      }
-
-      .app-wrapper {
-        height: 100dvh;
-        min-height: 100dvh;
-      }
-
-      .universal-header {
-        flex: 0 0 var(--header-h);
-        width: 100%;
-        min-width: 0;
-        padding-inline: 12px;
-      }
-
-      .header-brand {
-        min-width: 0;
-      }
-
-      #globalHeaderTitle {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      .app-body {
-        position: relative;
-        flex: 1 1 auto;
-        height: auto;
-        min-height: 0;
-        width: 100%;
-      }
-
-      .sidebar {
-        width: 100%;
-        height: calc(var(--mobile-nav-h) + env(safe-area-inset-bottom));
-        padding: 0 0 env(safe-area-inset-bottom);
-      }
-
-      .nav-item {
-        min-width: 0;
-        min-height: 44px;
-      }
-
-      .main-content {
-        position: relative;
-        flex: 1 1 auto;
-        width: 100%;
-        height: auto;
-        min-height: 0;
-        overflow: hidden;
-      }
-
-      .main-grid, .home-layout {
-        position: relative;
-        width: 100%;
-        height: 100%;
-        min-height: 0;
-        padding: 12px;
-        gap: 12px;
-      }
-
-      .main-grid {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: minmax(0, 1fr);
-      }
-
-      .home-layout {
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: minmax(0, 1fr);
-      }
-
-      /* Media column benar-benar kolom ketiga (sheet-backdrop adalah div). */
-      .main-grid > .col-wrapper:nth-of-type(3),
-      .home-layout > .col-wrapper:nth-of-type(2) {
-        display: none !important;
-      }
-
-      .main-grid > .col-wrapper:first-of-type {
-        display: flex;
-        grid-column: 1;
-        grid-row: 1;
-      }
-
-      /* Mobile detail = full-view di area aplikasi, bukan bottom-sheet yang menutup konten. */
-      .main-grid.mobile-detail-open {
-        padding: 0;
-        gap: 0;
-        grid-template-rows: minmax(0, 1fr);
-      }
-
-      .main-grid.mobile-detail-open > .col-wrapper:first-of-type,
-      .main-grid.mobile-detail-open > .col-wrapper:nth-of-type(3),
-      .main-grid.mobile-detail-open > .sheet-backdrop {
-        display: none !important;
-      }
-
-      .main-grid.mobile-detail-open #infoPanel {
-        display: flex !important;
-        position: absolute;
-        inset: 0 0 calc(var(--mobile-nav-h) + env(safe-area-inset-bottom)) 0;
-        width: auto;
-        height: auto;
-        max-height: none;
-        margin: 0;
-        z-index: 20;
-        border: 0 !important;
-        border-radius: 0 !important;
-        box-shadow: none !important;
-        transform: none !important;
-        overflow: hidden;
-      }
-
-      /* Backup jika class lama is-open masih tersisa. */
-      #infoPanel.is-open {
-        transform: none !important;
-      }
-
-      .sheet-backdrop {
-        display: none !important;
-      }
-
-      #infoPanel .col-body {
-        min-height: 0;
-        overflow: hidden;
-        padding: 16px 14px 10px;
-      }
-
-      #infoPanelHeader {
-        padding: 14px 14px 0 !important;
-        gap: 8px !important;
-        min-height: 0 !important;
-      }
-
-      #infoPanelHeader .editor-row {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        align-items: start;
-        gap: 8px;
-      }
-
-      #infoPanelHeader .editor-title {
-        font-size: clamp(20px, 6vw, 26px) !important;
-        line-height: 1.15;
-        overflow-wrap: anywhere;
-      }
-
-      #infoPanelHeader .editor-qty-wrapper {
-        font-size: 18px;
-      }
-
-      .info-detail-view {
-        width: 100%;
-        min-width: 0;
-        padding-inline: 0;
-      }
-
-      .action-row {
-        gap: 8px;
-        margin-top: 6px;
-        margin-bottom: 12px;
-        padding-bottom: 12px;
-        overflow-x: auto;
-        overflow-y: hidden;
-        flex-wrap: nowrap;
-        -webkit-overflow-scrolling: touch;
-      }
-
-      .action-row > * {
-        flex: 0 0 auto;
-      }
-
-      .desc-subtask-grid {
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
-        gap: 12px;
-        min-height: 0;
-        margin-bottom: 0;
-      }
-
-      .desc-subtask-grid > div {
-        min-height: 0;
-      }
-
-      .scroll-area-y {
-        min-height: 0;
-        -webkit-overflow-scrolling: touch;
-        overscroll-behavior: contain;
-      }
-
-      .subtask-card {
-        min-height: 44px;
-      }
-
-      .btn-del-subtask {
-        opacity: 1;
-        visibility: visible;
-        min-width: 32px;
-        min-height: 32px;
-      }
-
-      .info-footer, .col-footer {
-        padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
-      }
-
-      .col-footer .btn-primary-full {
-        width: 100%;
-        min-height: 44px;
-        padding-inline: 16px;
-      }
-
-      .fab {
-        position: absolute;
-        right: 16px;
-        bottom: 16px;
-        width: 52px;
-        height: 52px;
-        z-index: 5;
-      }
-
-      .modal-overlay {
-        align-items: flex-end;
-        padding: 10px;
-        padding-bottom: calc(10px + env(safe-area-inset-bottom));
-      }
-
-      .modal-panel {
-        width: 100%;
-        max-width: none;
-        max-height: min(90dvh, 720px);
-        border-radius: 20px;
-        padding: 18px;
-      }
-
-      .modal-actions {
-        position: sticky;
-        bottom: 0;
-        margin-inline: -2px;
-        padding-top: 10px;
-        background: var(--bg-card);
-      }
-
-      .modal-actions .btn {
-        flex: 1 1 0;
-        min-height: 44px;
-      }
-
-      .app-launcher-menu {
-        top: calc(100% + 8px);
-        right: 0;
-        width: min(280px, calc(100vw - 24px));
-        max-height: calc(100dvh - var(--header-h) - 16px);
-        overflow: auto;
-      }
-
-      .app-launcher-menu.is-expanded {
-        position: fixed;
-        top: max(8px, env(safe-area-inset-top));
-        right: max(8px, env(safe-area-inset-right));
-        bottom: max(8px, env(safe-area-inset-bottom));
-        left: max(8px, env(safe-area-inset-left));
-        width: auto;
-        height: auto;
-        max-height: none;
-        border-radius: 20px;
-        padding: 0;
-      }
-
-      .app-launcher-grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 14px 10px;
-      }
-
-      .app-icon-box {
-        width: 48px;
-        height: 48px;
-      }
-
-      .preview-container {
-        width: 100%;
-        height: 100%;
-        max-height: 100dvh;
-        border-radius: 0;
-      }
-
-      .preview-close {
-        top: max(12px, env(safe-area-inset-top));
-        right: max(12px, env(safe-area-inset-right));
-      }
-    }
-
-    @media (max-width: 380px) {
-      #infoPanelHeader .editor-row {
-        grid-template-columns: minmax(0, 1fr);
-      }
-
-      #infoPanelHeader .editor-qty-wrapper {
-        justify-self: start;
-      }
-
-      .main-grid, .home-layout {
-        padding: 8px;
-        gap: 8px;
-      }
-
-      #infoPanel .col-body {
-        padding-inline: 10px;
-      }
-
-      #infoPanelHeader {
-        padding-inline: 10px !important;
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after {
-        scroll-behavior: auto !important;
-        transition-duration: 0.01ms !important;
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-      }
-    }
-
-    .btn-action:focus-visible, .btn:focus-visible, .nav-item:focus-visible,
-    .subtask-checkbox:focus-visible, .clean-input:focus-visible, .subtask-input:focus-visible {
-      outline: 2px solid var(--primary);
-      outline-offset: 2px;
-    }
-
-    /* ICONS SETUP */
-    svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round;}
-    .icon { width: 12px; height: 12px; stroke: var(--text-muted); }
-    .drag-handle svg { width: 12px; height: 12px; fill: currentColor; stroke: none; }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<style>
+  html, body {
+    margin: 0; padding: 0; width: 100%; height: 100%;
+    overflow: hidden; touch-action: none;
+  }
+  canvas {
+    display: block; background: #fff; cursor: default;
+  }
+  #z, #coord-box {
+    position: fixed; bottom: 12px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 12px; color: #888; user-select: none; pointer-events: none; border: none;
+  }
+  #z { right: 16px; }
+  #coord-box { left: 16px; display: flex; gap: 16px; }
+
+  #h {
+    position: fixed; top: 32px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 8px; padding: 6px 10px; background: #fff;
+    border: 1px solid #e0e0e0; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    user-select: none; z-index: 10;
+  }
+  #leftToolbar {
+    position: fixed; top: 50%; left: 32px; transform: translateY(-50%);
+    display: flex; flex-direction: column; gap: 6px; padding: 6px;
+    background: #fff; border: 1px solid #e0e0e0; border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06); z-index: 15; user-select: none;
+  }
+  .tool-btn, .top-btn {
+    position: relative;
+    width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+    border-radius: 8px; cursor: pointer; background: transparent;
+    transition: background 0.15s, color 0.15s;
+  }
+  .tool-btn svg, .top-btn svg {
+    width: 18px; height: 18px; stroke: #444; fill: none; stroke-width: 1.6;
+    stroke-linecap: round; stroke-linejoin: round;
+  }
+  .tool-btn:hover:not(.active), .top-btn:hover { background: #f3f4f6; }
+  .tool-btn.active { background: #2563eb; }
+  .tool-btn.active svg { stroke: #ffffff; }
+
+  /* Flyout Shape Berderet dengan Ikon Berwarna */
+  #shapeFlyout {
+    display: none; position: absolute; left: 44px; top: 0;
+    flex-direction: row; gap: 6px; padding: 6px; background: #fff;
+    border: 1px solid #e0e0e0; border-radius: 10px; box-shadow: 0 4px 14px rgba(0,0,0,0.09);
+    z-index: 30; user-select: none;
+  }
+  #shapeFlyout.open { display: flex; }
+  .shape-item-btn {
+    width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+    border-radius: 6px; cursor: pointer; background: #eff6ff; border: 1px solid #dbeafe;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .shape-item-btn:hover { background: #dbeafe; transform: translateY(-1px); }
+  .shape-item-btn svg {
+    width: 18px; height: 18px; stroke: #000000; fill: #ffffff; stroke-width: 1.6;
+    stroke-linecap: round; stroke-linejoin: round;
+  }
+
+  .item { position: relative; display: flex; align-items: center; }
+  .dropdown, #ctxMenu, #linkCtxMenu {
+    display: none; position: absolute; background: #fff; border: 1px solid #e0e0e0;
+    border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.08); padding: 4px 0;
+    min-width: 180px; flex-direction: column; z-index: 30; user-select: none;
+  }
+  .dropdown { top: 40px; left: 0; }
+  .dropdown.open, #ctxMenu.open, #linkCtxMenu.open { display: flex; }
+  .menu-item {
+    display: flex; align-items: center; justify-content: space-between; padding: 7px 12px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 12px; color: #333; cursor: pointer;
+  }
+  .menu-item-left { display: flex; align-items: center; gap: 8px; }
+  .menu-shortcut { color: #94a3b8; font-size: 11px; font-weight: 500; }
+  .menu-item:hover { background: #f3f3f3; }
+  .menu-item svg {
+    width: 14px; height: 14px; stroke: #444; fill: none; stroke-width: 1.5;
+    stroke-linecap: round; stroke-linejoin: round;
+  }
+  .menu-separator { height: 1px; background: #eee; margin: 4px 0; }
+
+  #cardEditor {
+    display: none; position: fixed; box-sizing: border-box; 
+    border: none; background: transparent; color: #1e293b;
+    font-family: sans-serif; font-size: 14px;
+    line-height: 20px; padding: 10px; resize: none; outline: none; z-index: 25;
+    overflow: hidden; scrollbar-width: none; -ms-overflow-style: none;
+    text-align: center;
+  }
+  #cardEditor::-webkit-scrollbar { display: none; }
+
+  .dom-media {
+    position: fixed; box-sizing: border-box; transform-origin: top left;
+    pointer-events: auto; z-index: 5; border-radius: 6px; overflow: hidden;
+    background: #000; display: flex; align-items: center; justify-content: center;
+  }
+</style>
 </head>
 <body>
 
-  <!-- SVG Master List -->
-  <svg style="display: none;">
-    <symbol id="icon-home" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></symbol>
-    <symbol id="icon-list" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></symbol>
-    <symbol id="icon-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></symbol>
-    <symbol id="icon-drag" viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></symbol>
-    <symbol id="icon-task" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></symbol>
-    <symbol id="icon-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></symbol>
-    <symbol id="icon-close" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></symbol>
-    <symbol id="icon-empty" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="9" x2="15" y2="15"></line><line x1="15" y1="9" x2="9" y2="15"></line></symbol>
-    <symbol id="icon-check-circle" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></symbol>
-    <symbol id="icon-chevron-left" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></symbol>
-    <symbol id="icon-chevron-right" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></symbol>
-    <symbol id="icon-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></symbol>
-    <symbol id="icon-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></symbol>
-    <symbol id="icon-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></symbol>
-    <symbol id="icon-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></symbol>
-    <symbol id="icon-dots-vertical" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="2" fill="currentColor" stroke="none"/></symbol>
-    <symbol id="icon-paperclip" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></symbol>
-    <symbol id="icon-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect></symbol>
-    <symbol id="icon-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></symbol>
-    <symbol id="icon-music" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></symbol>
-  </svg>
-
-  <div class="app-wrapper">
-    
-    <!-- HEADER UNIVERSAL (100% Lebar Halaman) -->
-    <header class="universal-header" id="universalHeader">
-      <div class="header-brand">
-        <svg style="width:20px;height:20px;color:var(--primary);"><use href="#icon-check-circle"></use></svg>
-        <span id="globalHeaderTitle">Task Manager</span>
-      </div>
-      
-      <div style="position: relative;">
-        <!-- App Launcher Trigger -->
-        <button class="btn-action icon-only" id="btnAppLauncher" title="Aplikasi Lainnya" style="border:none; background:transparent;">
-          <svg style="width: 18px; height: 18px;"><use href="#icon-grid"></use></svg>
-        </button>
-        
-        <!-- App Launcher Dropdown (Bisa Expand ke Atas & Bawah) -->
-        <div class="app-launcher-menu" id="appLauncherMenu">
-          
-          <!-- State 1: Grid Menu (Aplikasi Baru di Atas) -->
-          <div class="app-launcher-grid" id="appLauncherGrid">
-            <!-- Aplikasi Utama Berfungsi -->
-            <div class="app-icon" data-src="https://workspace.zidaneasyd.workers.dev/app/appboard.html" data-title="Whiteboard"><div class="app-icon-box"><svg><use href="#icon-image"></use></svg></div><span>Whiteboard</span></div>
-            <div class="app-icon" data-src="https://workspace.zidaneasyd.workers.dev/app/apptracker.html" data-title="Tracker"><div class="app-icon-box"><svg><use href="#icon-task"></use></svg></div><span>Tracker</span></div>
-            <div class="app-icon" data-src="https://workspace.zidaneasyd.workers.dev/app/appmusic.html" data-title="Musik Lokal"><div class="app-icon-box"><svg><use href="#icon-music"></use></svg></div><span>Musik Lokal</span></div>
-            
-            <!-- Aplikasi Dummy -->
-            <div class="app-icon"><div class="app-icon-box"><svg><use href="#icon-calendar"></use></svg></div><span>Agenda</span></div>
-            <div class="app-icon"><div class="app-icon-box"><svg><use href="#icon-upload"></use></svg></div><span>Cloud</span></div>
-            <div class="app-icon"><div class="app-icon-box"><svg><use href="#icon-settings"></use></svg></div><span>Sistem</span></div>
-            <div class="app-icon"><div class="app-icon-box"><svg><use href="#icon-download"></use></svg></div><span>Arsip</span></div>
-            <div class="app-icon"><div class="app-icon-box"><svg><use href="#icon-list"></use></svg></div><span>Laporan</span></div>
-            <div class="app-icon"><div class="app-icon-box"><svg><use href="#icon-check-circle"></use></svg></div><span>Selesai</span></div>
-          </div>
-
-          <!-- State 2: Area Multi-Iframe (Whiteboard, Tracker, Musik) -->
-          <div id="appIframeHeader" style="display: none; padding: 12px 16px; border-bottom: 1px solid var(--border-medium); align-items: center; gap: 12px; background: var(--bg-card); z-index: 10;">
-            <button class="btn-action icon-only" id="btnBackAppGrid" style="height: 28px; width: 28px; border:none; background:rgba(0,0,0,0.04);"><svg><use href="#icon-chevron-left"></use></svg></button>
-            <span style="font-weight: 600; font-size: 13px;" id="appNameTitle">Aplikasi</span>
-          </div>
-          <div id="appIframeBody" style="display: none; flex: 1; background: var(--bg-body); overflow: hidden; position: relative;">
-            <!-- Iframe-iframe akan di-inject ke sini oleh JS -->
-          </div>
-
-        </div>
-      </div>
-    </header>
-
-    <!-- APP BODY (Sidebar + Content) -->
-    <div class="app-body">
-      
-      <!-- SIDEBAR -->
-      <nav class="sidebar" id="mainSidebar">
-        <div class="nav-item" data-menu="home" title="Home"><svg><use href="#icon-home"></use></svg></div>
-        <div class="nav-item active" data-menu="list" title="Daftar Pekerjaan"><svg><use href="#icon-list"></use></svg></div>
-        <div class="nav-item" id="btnOpenSettings" title="Pengaturan Latar Belakang"><svg><use href="#icon-settings"></use></svg></div>
-      </nav>
-
-      <!-- CONTENT WRAPPER -->
-      <div class="main-content">
-        
-        <!-- MENU LIST (DEFAULT: 3 KOLOM) -->
-        <div class="main-grid" id="mainGrid">
-          
-          <!-- KOLOM 1: DAFTAR KARTU -->
-          <section class="col-wrapper">
-            <header class="col-header">
-              <span>Daftar Pekerjaan</span>
-              <div style="display: flex; gap: 8px;">
-                <button class="btn-action icon-only" id="btnImport" title="Impor Data JSON"><svg><use href="#icon-upload"></use></svg></button>
-                <button class="btn-action icon-only" id="btnExport" title="Ekspor Data JSON"><svg><use href="#icon-download"></use></svg></button>
-                <input type="file" id="fileInput" accept=".json" style="display:none;">
-              </div>
-            </header>
-            <div class="col-body">
-              <div class="card-list" id="cardList"></div>
-              <div class="fab" id="btnOpenAddModal" title="Tambah Data">
-                <svg style="stroke-width: 2.5; width:20px; height:20px;"><use href="#icon-plus"></use></svg>
-              </div>
-            </div>
-          </section>
-
-          <!-- BACKDROP MOBILE -->
-          <div class="sheet-backdrop" id="sheetBackdrop"></div>
-
-          <!-- KOLOM 2: RUANG KERJA (INFO PANEL) -->
-          <section class="col-wrapper" id="infoPanel">
-            
-            <header class="col-header" id="infoPanelHeader" style="display: none; border-bottom: none !important; height: auto; min-height: unset; padding: 24px 24px 0; align-items: flex-start; gap: 12px;">
-              <div class="editor-row" style="margin-bottom: 0; flex: 1;">
-                <input type="text" id="detailTitle" class="clean-input editor-title" spellcheck="false" autocorrect="off" autocomplete="off" placeholder="Nama Pekerjaan">
-                <div class="editor-qty-wrapper">
-                  <input type="number" id="detailQty" class="clean-input" placeholder="0">
-                  <span style="font-size: 14px; color: var(--text-muted); font-weight: 500;">pcs</span>
-                </div>
-              </div>
-              <button class="close-sheet-btn" id="btnCloseSheet" style="margin-top: 4px;"><svg style="width:20px;height:20px;"><use href="#icon-close"></use></svg></button>
-            </header>
-
-            <!-- Diubah agar tidak bisa scroll secara keseluruhan -->
-            <div class="col-body" style="padding: 24px 24px 12px 24px; overflow: hidden; display: flex; flex-direction: column;">
-              
-              <div class="info-empty" id="infoEmpty">
-                <svg style="width: 48px; height: 48px; opacity: 0.5;"><use href="#icon-empty"></use></svg>
-                <p>Pilih kartu dari daftar untuk melihat<br>dan mengedit detail.</p>
-              </div>
-
-              <div class="info-detail-view" id="infoDetail">
-                
-                <!-- BARIS AKSI -->
-                <div class="action-row">
-                  <button class="btn-action btn-action-sm" id="btnOpenDeadlineModal">
-                    <svg><use href="#icon-calendar"></use></svg>
-                    <span id="deadlineDisplay">Tentukan Deadline</span>
-                  </button>
-                  
-                  <div class="status-group">
-                    <button class="btn-action btn-action-sm icon-only" id="btnPrevStatus" title="Status Sebelumnya"><svg><use href="#icon-chevron-left"></use></svg></button>
-                    <button class="btn-action btn-action-sm" style="min-width: 72px; pointer-events: none;"><span id="detailStatusBadge" style="color:var(--text-main); font-weight:600;">List</span></button>
-                    <button class="btn-action btn-action-sm icon-only" id="btnNextStatus" title="Status Selanjutnya"><svg><use href="#icon-chevron-right"></use></svg></button>
-                  </div>
-                </div>
-
-                <!-- GRID DESKRIPSI & SUBTASK (SCROLL MANDIRI) -->
-                <div class="desc-subtask-grid">
-                  
-                  <!-- Kiri: Deskripsi -->
-                  <div style="display: flex; flex-direction: column; height: 100%; overflow: hidden;">
-                    <h3 style="font-size: 13px; margin-bottom: 8px; border-bottom: 1px solid var(--border-light); padding-bottom: 8px; color: var(--text-muted); flex-shrink: 0;">Deskripsi Pekerjaan</h3>
-                    <textarea id="detailDescription" class="clean-input scroll-area-y" placeholder="Tulis detail spesifikasi di sini..." style="resize: none; margin-top: 8px; font-size: 14px; line-height: 1.5; color: var(--text-muted); flex: 1;"></textarea>
-                  </div>
-                  
-                  <!-- Kanan: Subtask -->
-                  <div style="display: flex; flex-direction: column; height: 100%; overflow: hidden;">
-                    <h3 style="font-size: 13px; margin-bottom: 12px; border-bottom: 1px solid var(--border-light); padding-bottom: 8px; color: var(--text-muted); flex-shrink: 0;">Daftar Subtask</h3>
-                    
-                    <div id="subtaskList" class="subtask-list scroll-area-y" style="flex: 1;">
-                      <!-- Kartu Subtask akan dimuat di sini -->
-                    </div>
-                    
-                    <button class="btn-add-subtask" id="btnAddSubtask" style="margin-top: 12px; flex-shrink: 0;">
-                      <svg><use href="#icon-plus"></use></svg> Tambah Subtask
-                    </button>
-                  </div>
-
-                </div>
-                
-              </div>
-
-            </div>
-
-            <!-- FOOTER: TOMBOL SELESAI -->
-            <footer class="col-footer" id="infoFooter" style="display: none;">
-              <button class="btn-primary-full" id="btnToggleDone">
-                <svg><use href="#icon-check-circle"></use></svg> 
-                <span id="btnDoneText">Tandai Selesai</span>
-              </button>
-            </footer>
-
-          </section>
-
-          <!-- KOLOM 3: AREA LAMPIRAN MEDIA -->
-          <section class="col-wrapper">
-            <header class="col-header">
-              <span>Lampiran</span>
-              <button class="btn-action icon-only" id="btnAddMedia" title="Tambah Gambar" style="border:none;">
-                <svg><use href="#icon-plus"></use></svg>
-              </button>
-              <input type="file" id="mediaInput" accept="image/*" style="display:none;">
-            </header>
-            <div class="col-body" style="padding: 24px;">
-              <div id="mediaGallery" style="display: flex; flex-direction: column; width: 100%;">
-                <div id="mediaEmpty" style="text-align: center; color: var(--icon-color); font-size: 13px; margin-top: 40px;">
-                  Belum ada lampiran.
-                </div>
-              </div>
-            </div>
-          </section>
-
-        </div>
-
-        <!-- MENU HOME (GALERI 7:3) -->
-        <div class="home-layout" id="homeLayout">
-          
-          <section class="col-wrapper">
-            <div class="col-body" style="padding: 24px;">
-              <div id="homeGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 24px;">
-                <!-- Grid Gambar -->
-              </div>
-            </div>
-          </section>
-          
-          <section class="col-wrapper">
-            <div class="col-body" style="display: flex; align-items: center; justify-content: center; color: var(--icon-color); font-size: 13px; text-align: center;">
-              Area Kosong<br>(3/10 Ruang)
-            </div>
-          </section>
-
-        </div>
-      </div> <!-- END MAIN CONTENT -->
-
-    </div> <!-- END APP BODY -->
+<div id="leftToolbar">
+  <div class="tool-btn active" id="toolPointer" title="Select (Pointer)">
+    <svg viewBox="0 0 24 24"><path d="M3 3l7 18 3-7 7-3L3 3z"/></svg>
   </div>
-
-  <!-- TOAST NOTIFICATION -->
-  <div id="toast" class="toast">
-    <svg style="width:16px;height:16px;"><use href="#icon-info"></use></svg>
-    <span id="toastMsg">Pesan</span>
+  <div class="tool-btn" id="toolText" title="Teks Langsung">
+    <svg viewBox="0 0 24 24"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
   </div>
-
-  <!-- MODAL: SETTINGS (LATAR BELAKANG) -->
-  <div class="modal-overlay" id="modalSettings">
-    <div class="modal-panel">
-      <div style="font-size: 18px; font-weight: 600; margin-bottom: 20px;">Pengaturan Tampilan</div>
-      <div class="form-group">
-        <label>Gambar Latar Belakang Aplikasi</label>
-        <button class="btn-action" id="btnUploadBg" style="width:100%; justify-content:center;">Pilih & Unggah Gambar</button>
-        <input type="file" id="inputBgFile" accept="image/*" style="display:none;">
-        <button class="btn-action" id="btnRemoveBg" style="width:100%; justify-content:center; margin-top:8px; color:#dc2626; border-color:#fecaca; background:#fef2f2;">Hapus Latar Belakang</button>
+  <div class="tool-btn" id="toolShape" title="Flowchart Shape">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+    <div id="shapeFlyout">
+      <div class="shape-item-btn" data-shape="rect" title="Process (Kotak)">
+        <svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/></svg>
       </div>
-      <div class="modal-actions">
-        <button class="btn btn-cancel" id="btnCloseSettings">Tutup</button>
+      <div class="shape-item-btn" data-shape="diamond" title="Decision (Belah Ketupat)">
+        <svg viewBox="0 0 24 24"><polygon points="12 3 21 12 12 21 3 12"/></svg>
+      </div>
+      <div class="shape-item-btn" data-shape="oval" title="Terminator (Kapsul)">
+        <svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="6"/></svg>
+      </div>
+      <div class="shape-item-btn" data-shape="parallelogram" title="Data / IO (Jajaran Genjang)">
+        <svg viewBox="0 0 24 24"><polygon points="6 5 21 5 18 19 3 19"/></svg>
       </div>
     </div>
   </div>
+  <div class="tool-btn" id="toolLink" title="Link (Connect)">
+    <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+  </div>
+  <div class="tool-btn" id="toolPan" title="Pan (Hand)">
+    <svg viewBox="0 0 24 24"><path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 0 0-4 0v7"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
+  </div>
+</div>
 
-  <!-- MODAL: TAMBAH DATA -->
-  <div class="modal-overlay" id="modalAdd">
-    <div class="modal-panel">
-      <div style="font-size: 18px; font-weight: 600; margin-bottom: 20px;">Tambah Pekerjaan Baru</div>
-      <div class="form-group">
-        <label for="inputTitle">Nama Pekerjaan (Tekan Enter untuk simpan)</label>
-        <input type="text" id="inputTitle" placeholder="Misal: Spanduk 3x1" autocomplete="off" spellcheck="false">
-      </div>
-      <div class="form-group">
-        <label for="inputQty">Jumlah (pcs) - Opsional</label>
-        <input type="number" id="inputQty" placeholder="Otomatis 1 jika kosong" autocomplete="off">
-      </div>
-      <div class="modal-actions">
-        <button class="btn btn-cancel" id="btnCancelAdd">Batal</button>
-        <button class="btn btn-submit" id="btnSubmitAdd">Simpan</button>
-      </div>
+<div id="h">
+  <div class="item" id="btnFile">
+    <div class="top-btn" title="File">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    </div>
+    <div class="dropdown" id="dropFile">
+      <div class="menu-item" id="mExportJson"><div class="menu-item-left"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export Board (JSON)</div></div>
+      <div class="menu-item" id="mImportJson"><div class="menu-item-left"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Import Board (JSON)</div></div>
+      <div class="menu-separator"></div>
+      <div class="menu-item" id="mImportMedia"><div class="menu-item-left"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Import Media (Ctrl+I)</div></div>
     </div>
   </div>
-
-  <!-- MODAL KUSTOM: TENGGAT WAKTU (DEADLINE) -->
-  <div class="modal-overlay" id="modalDeadline">
-    <div class="modal-panel">
-      <div style="font-size: 18px; font-weight: 600; margin-bottom: 20px;">Atur Tenggat Waktu</div>
-      
-      <div class="form-group">
-        <label>Tanggal Deadline</label>
-        <div class="custom-date-grid">
-          <input type="number" id="inpDay" placeholder="Tgl" min="1" max="31">
-          <select id="inpMonth">
-            <option value="0">Jan</option><option value="1">Feb</option><option value="2">Mar</option>
-            <option value="3">Apr</option><option value="4">Mei</option><option value="5">Jun</option>
-            <option value="6">Jul</option><option value="7">Agu</option><option value="8">Sep</option>
-            <option value="9">Okt</option><option value="10">Nov</option><option value="11">Des</option>
-          </select>
-          <input type="number" id="inpYear" placeholder="Thn" min="2024">
-        </div>
-      </div>
-
-      <div class="form-group" style="margin-top: 16px;">
-        <label>Jam & Menit (Tekan Enter untuk Simpan)</label>
-        <div class="custom-time-grid">
-          <input type="number" id="inpHour" placeholder="00" min="0" max="23">
-          <span style="font-weight:bold; color:var(--text-muted)">:</span>
-          <input type="number" id="inpMinute" placeholder="00" min="0" max="59">
-        </div>
-      </div>
-
-      <div class="modal-actions">
-        <button class="btn btn-cancel" id="btnCancelDeadline">Batal</button>
-        <button class="btn btn-submit" id="btnSubmitDeadline">Terapkan</button>
-      </div>
+  <div class="item" id="btnEdit">
+    <div class="top-btn" title="Edit">
+      <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+    </div>
+    <div class="dropdown" id="dropEdit">
+      <div class="menu-item" id="mUndo"><div class="menu-item-left"><svg viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>Undo</div><span class="menu-shortcut">Ctrl+Z</span></div>
+      <div class="menu-item" id="mRedo"><div class="menu-item-left"><svg viewBox="0 0 24 24"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"/></svg>Redo</div><span class="menu-shortcut">Ctrl+Y</span></div>
+      <div class="menu-item" id="mCut"><div class="menu-item-left"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>Cut</div><span class="menu-shortcut">Ctrl+X</span></div>
+      <div class="menu-item" id="mCopy"><div class="menu-item-left"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</div><span class="menu-shortcut">Ctrl+C</span></div>
+      <div class="menu-item" id="mPaste"><div class="menu-item-left"><svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>Paste</div><span class="menu-shortcut">Ctrl+V</span></div>
+      <div class="menu-item" id="mDup"><div class="menu-item-left"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/><line x1="12" y1="15.5" x2="19" y2="15.5"/><line x1="15.5" y1="12" x2="15.5" y2="19"/></svg>Duplicate</div><span class="menu-shortcut">Ctrl+D</span></div>
+      <div class="menu-item" id="mDel"><div class="menu-item-left"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete</div><span class="menu-shortcut">Del</span></div>
     </div>
   </div>
-
-  <!-- MODAL PREVIEW GAMBAR -->
-  <div class="modal-preview" id="modalPreview">
-    <div class="preview-container">
-      <button class="preview-close" id="btnClosePreview"><svg style="width:20px;height:20px;"><use href="#icon-close"></use></svg></button>
-      <img id="imgPreview" class="preview-image" src="" alt="Preview">
+  <div class="item" id="btnView">
+    <div class="top-btn" title="View">
+      <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+    </div>
+    <div class="dropdown" id="dropView">
+      <div class="menu-item" id="mSelAll"><div class="menu-item-left"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Select All</div><span class="menu-shortcut">Shift+A</span></div>
+      <div class="menu-item" id="mViewAll"><div class="menu-item-left"><svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>View All</div><span class="menu-shortcut">Ctrl+Shift+A</span></div>
     </div>
   </div>
+</div>
 
-  <script>
-    // --- Elements List ---
-    const list = document.getElementById('cardList');
-    const infoPanel = document.getElementById('infoPanel');
-    const infoPanelHeader = document.getElementById('infoPanelHeader');
-    const infoFooter = document.getElementById('infoFooter');
-    const sheetBackdrop = document.getElementById('sheetBackdrop');
-    const infoEmpty = document.getElementById('infoEmpty');
-    const infoDetail = document.getElementById('infoDetail');
-    
-    // --- Workspace Elements ---
-    const btnToggleDone = document.getElementById('btnToggleDone');
-    const btnDoneText = document.getElementById('btnDoneText');
-    const detailTitle = document.getElementById('detailTitle');
-    const detailQty = document.getElementById('detailQty');
-    const detailDescription = document.getElementById('detailDescription');
-    const deadlineDisplay = document.getElementById('deadlineDisplay');
-    const detailStatusBadge = document.getElementById('detailStatusBadge');
+<!-- Context Menu Board / Kartu -->
+<div id="ctxMenu">
+  <div class="menu-item multi-only" id="ctxAlignTop"><div class="menu-item-left"><svg viewBox="0 0 24 24"><line x1="3" y1="4" x2="21" y2="4"/><rect x="5" y="8" width="6" height="12" rx="1"/><rect x="13" y="8" width="6" height="8" rx="1"/></svg>Ratakan Atas (Top)</div><span class="menu-shortcut">T</span></div>
+  <div class="menu-item multi-only" id="ctxAlignBottom"><div class="menu-item-left"><svg viewBox="0 0 24 24"><line x1="3" y1="20" x2="21" y2="20"/><rect x="5" y="4" width="6" height="12" rx="1"/><rect x="13" y="8" width="6" height="8" rx="1"/></svg>Ratakan Bawah (Bottom)</div><span class="menu-shortcut">B</span></div>
+  <div class="menu-item multi-only" id="ctxAlignLeftEdge"><div class="menu-item-left"><svg viewBox="0 0 24 24"><line x1="4" y1="3" x2="4" y2="21"/><rect x="8" y="5" width="12" height="6" rx="1"/><rect x="8" y="13" width="8" height="6" rx="1"/></svg>Ratakan Kiri (Left)</div><span class="menu-shortcut">L</span></div>
+  <div class="menu-item multi-only" id="ctxAlignRightEdge"><div class="menu-item-left"><svg viewBox="0 0 24 24"><line x1="20" y1="3" x2="20" y2="21"/><rect x="4" y="5" width="12" height="6" rx="1"/><rect x="8" y="13" width="8" height="6" rx="1"/></svg>Ratakan Kanan (Right)</div><span class="menu-shortcut">R</span></div>
+  <div class="menu-item multi-only" id="ctxAlignCenterH"><div class="menu-item-left"><svg viewBox="0 0 24 24"><line x1="12" y1="3" x2="12" y2="21"/><rect x="6" y="5" width="12" height="6" rx="1"/><rect x="8" y="13" width="8" height="6" rx="1"/></svg>Ratakan Center Horizontal</div><span class="menu-shortcut">C</span></div>
+  <div class="menu-item multi-only" id="ctxAlignCenterV"><div class="menu-item-left"><svg viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><rect x="5" y="6" width="6" height="12" rx="1"/><rect x="13" y="8" width="6" height="8" rx="1"/></svg>Ratakan Center Vertikal</div><span class="menu-shortcut">E</span></div>
+  <div class="menu-separator multi-only"></div>
 
-    // --- Media Elements ---
-    const btnAddMedia = document.getElementById('btnAddMedia');
-    const mediaInput = document.getElementById('mediaInput');
-    const mediaGallery = document.getElementById('mediaGallery');
-    const modalPreview = document.getElementById('modalPreview');
-    const imgPreview = document.getElementById('imgPreview');
-    const btnClosePreview = document.getElementById('btnClosePreview');
-    
-    // --- Navigation & App Launcher Elements ---
-    const globalHeaderTitle = document.getElementById('globalHeaderTitle');
-    const mainSidebar = document.getElementById('mainSidebar');
-    const navItems = mainSidebar.querySelectorAll('.nav-item');
-    const mainGrid = document.getElementById('mainGrid');
-    const homeLayout = document.getElementById('homeLayout');
-    
-    const btnAppLauncher = document.getElementById('btnAppLauncher');
-    const appLauncherMenu = document.getElementById('appLauncherMenu');
-    const appLauncherGrid = document.getElementById('appLauncherGrid');
-    const appIframeHeader = document.getElementById('appIframeHeader');
-    const appIframeBody = document.getElementById('appIframeBody');
-    const btnBackAppGrid = document.getElementById('btnBackAppGrid');
-    const appNameTitle = document.getElementById('appNameTitle');
-    
-    // --- Settings (Background) Elements ---
-    const btnOpenSettings = document.getElementById('btnOpenSettings');
-    const modalSettings = document.getElementById('modalSettings');
-    const btnCloseSettings = document.getElementById('btnCloseSettings');
-    const inputBgFile = document.getElementById('inputBgFile');
-    const btnUploadBg = document.getElementById('btnUploadBg');
-    const btnRemoveBg = document.getElementById('btnRemoveBg');
+  <div class="menu-item text-only" id="ctxAlignLeft"><div class="menu-item-left"><svg viewBox="0 0 24 24"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>Teks Rata Kiri</div></div>
+  <div class="menu-item text-only" id="ctxAlignCenter"><div class="menu-item-left"><svg viewBox="0 0 24 24"><line x1="18" y1="10" x2="6" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="18" y1="18" x2="6" y2="18"/></svg>Teks Rata Tengah</div></div>
+  <div class="menu-item text-only" id="ctxAlignRight"><div class="menu-item-left"><svg viewBox="0 0 24 24"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="7" y2="18"/></svg>Teks Rata Kanan</div></div>
+  <div class="menu-separator text-only"></div>
 
-    // --- Config & Toast ---
-    const STATUS_LIST = ['List', 'Setting', 'Cutting', 'Print', 'Pasang', 'Finishing', 'Packing', 'Kirim'];
-    const DAY_NAMES = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
-    const MONTH_NAMES_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+  <div class="menu-item card-only" id="ctxResize"><div class="menu-item-left"><svg viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg><span id="ctxResizeTxt">Resize Mode</span></div></div>
+  <div class="menu-item card-only" id="ctxOrigin"><div class="menu-item-left"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>Origin Size</div></div>
+  <div class="menu-item card-only" id="ctxEdit"><div class="menu-item-left"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Edit</div></div>
+  <div class="menu-separator card-only"></div>
+  <div class="menu-item card-only" id="ctxCopy"><div class="menu-item-left"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</div><span class="menu-shortcut">Ctrl+C</span></div>
+  <div class="menu-item card-only" id="ctxCut"><div class="menu-item-left"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>Cut</div><span class="menu-shortcut">Ctrl+X</span></div>
+  <div class="menu-item" id="ctxPaste"><div class="menu-item-left"><svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>Paste</div><span class="menu-shortcut">Ctrl+V</span></div>
+  <div class="menu-item card-only" id="ctxDup"><div class="menu-item-left"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/><line x1="12" y1="15.5" x2="19" y2="15.5"/><line x1="15.5" y1="12" x2="15.5" y2="19"/></svg>Duplicate</div><span class="menu-shortcut">Ctrl+D</span></div>
+  <div class="menu-item card-only" id="ctxDel"><div class="menu-item-left"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete</div><span class="menu-shortcut">Del</span></div>
+  <div class="menu-separator empty-only"></div>
+  <div class="menu-item empty-only" id="ctxSelAll"><div class="menu-item-left"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Select All</div></div>
+  <div class="menu-item empty-only" id="ctxViewAll"><div class="menu-item-left"><svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>View All</div></div>
+</div>
 
-    let isDragging = false;
-    let draggedCard = null, placeholder = null, startY = 0;
-    let toastTimeout;
+<div id="linkCtxMenu">
+  <div class="menu-item" id="mLinkDesc">
+    <div class="menu-item-left"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Keterangan</div>
+  </div>
+  <div class="menu-item" id="mLinkDel">
+    <div class="menu-item-left"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Hapus Link</div>
+  </div>
+</div>
 
-    function showToast(msg) {
-        const t = document.getElementById('toast');
-        document.getElementById('toastMsg').textContent = msg;
-        t.classList.add('show');
-        clearTimeout(toastTimeout);
-        toastTimeout = setTimeout(() => t.classList.remove('show'), 3000);
+<textarea id="cardEditor"></textarea>
+<input type="file" id="fileInp" accept="image/*,video/*,audio/*" style="display:none;" multiple>
+<input type="file" id="jsonInp" accept=".json,application/json" style="display:none;">
+<div id="mediaContainer"></div>
+<canvas id="c"></canvas>
+<div id="coord-box"><span id="coord">X: 0, Y: 0</span><span id="sel-info">Terpilih: 0 / 0</span></div>
+<div id="z">100%</div>
+
+<script>
+const c = document.getElementById('c'),
+      z = document.getElementById('z'),
+      coord = document.getElementById('coord'),
+      selInfo = document.getElementById('sel-info'),
+      toolPointer = document.getElementById('toolPointer'),
+      toolText = document.getElementById('toolText'),
+      toolShape = document.getElementById('toolShape'),
+      shapeFlyout = document.getElementById('shapeFlyout'),
+      toolLink = document.getElementById('toolLink'),
+      toolPan = document.getElementById('toolPan'),
+      dropFile = document.getElementById('dropFile'),
+      dropEdit = document.getElementById('dropEdit'),
+      dropView = document.getElementById('dropView'),
+      ctxMenu = document.getElementById('ctxMenu'),
+      linkCtxMenu = document.getElementById('linkCtxMenu'),
+      ctxResizeTxt = document.getElementById('ctxResizeTxt'),
+      editor = document.getElementById('cardEditor'),
+      fileInp = document.getElementById('fileInp'),
+      jsonInp = document.getElementById('jsonInp'),
+      mediaContainer = document.getElementById('mediaContainer'),
+      x = c.getContext('2d');
+
+let w, h, ox = 0, oy = 0, s = 1;
+let curX = 0, curY = 0, init = false;
+let cards = [], connections = [], selectedIds = new Set();
+let selectedLinkId = null;
+let resizeCardId = null, isResizing = false, resizeCorner = null, resizeOriginBox = null;
+let dragC = false, cMoved = false, dragStarts = new Map(), dragOrigX = 0, dragOrigY = 0;
+let clip = [], editingCard = null;
+let lastCopySource = 'internal';
+
+let activeTool = 'pointer';
+let lastTool = 'pan';
+let currentShapeType = 'rect';
+let connSourcePin = null;
+let hoveredPort = null;
+let draggingLinkLabel = null;
+
+let isPanning = false, panStartX = 0, panStartY = 0, isMiddlePanning = false;
+let isBoxSelecting = false, boxSelStart = {x: 0, y: 0}, curBoxRect = null;
+
+const domMediaMap = new Map();
+let undoSt = [], redoSt = [];
+
+// VALIDASI LOGIKA FLOWCHART
+function getFlowchartPortsForCard(cd, role) {
+  if (cd.type !== 'shape') {
+    const allDirs = [
+      { u: 0, v: 0 }, { u: 0.5, v: 0 }, { u: 1, v: 0 }, { u: 1, v: 0.5 },
+      { u: 1, v: 1 }, { u: 0.5, v: 1 }, { u: 0, v: 1 }, { u: 0, v: 0.5 }
+    ];
+    return allDirs.map(p => ({ ...p, dir: 'free', type: 'both' }));
+  }
+
+  const rawTxt = (cd.raw || '').toLowerCase().trim();
+  const shape = cd.shapeType;
+
+  // Hitung jumlah link keluar & masuk yang sudah terpasang
+  const outLinks = connections.filter(cn => cn.fromId === cd.id);
+  const inLinks = connections.filter(cn => cn.toId === cd.id);
+
+  // 1. Terminator (Oval / Kapsul)
+  if (shape === 'oval') {
+    const isEnd = ['end', 'selesai', 'stop', 'fin', 'tamat'].some(k => rawTxt.includes(k));
+    if (isEnd) {
+      if (role === 'source') return []; // End TIDAK BISA KELUAR
+      return [
+        { u: 0.5, v: 0, dir: 'top', type: 'in' },
+        { u: 0, v: 0.5, dir: 'left', type: 'in' },
+        { u: 1, v: 0.5, dir: 'right', type: 'in' }
+      ];
+    } else {
+      // Start / Mulai: MAKSIMAL TEPAT 1 OUTPUT KELUAR
+      if (role === 'target') return []; // Start TIDAK BISA MENERIMA INPUT
+      if (role === 'source' && outLinks.length >= 1) return []; // Sudah punya 1 garis keluar
+      return [
+        { u: 0.5, v: 1, dir: 'bottom', type: 'out' },
+        { u: 1, v: 0.5, dir: 'right', type: 'out' },
+        { u: 0, v: 0.5, dir: 'left', type: 'out' }
+      ];
+    }
+  }
+
+  // 2. Decision / Percabangan (Diamond)
+  if (shape === 'diamond') {
+    // MAKSIMAL 2 OUTPUT KELUAR (Satu 'Ya', Satu 'Tidak')
+    const hasYa = outLinks.some(cn => cn.label === 'Ya');
+    const hasTidak = outLinks.some(cn => cn.label === 'Tidak');
+
+    if (role === 'source' && outLinks.length >= 2) return [];
+
+    let outPorts = [];
+    if (!hasYa) outPorts.push({ u: 0.5, v: 1, dir: 'bottom', type: 'out', branch: 'Ya' });
+    if (!hasTidak) {
+      outPorts.push({ u: 1, v: 0.5, dir: 'right', type: 'out', branch: 'Tidak' });
+      outPorts.push({ u: 0, v: 0.5, dir: 'left', type: 'out', branch: 'Tidak' });
     }
 
-    // --- 0. BACKGROUND / SETTINGS INIT ---
-    const savedBg = localStorage.getItem('ws_app_bg');
-    if (savedBg) {
-      document.body.style.backgroundImage = `url(${savedBg})`;
-      document.body.style.backgroundSize = 'cover';
-      document.body.style.backgroundPosition = 'center';
-      document.body.classList.add('has-bg');
+    if (role === 'source') return outPorts;
+    if (role === 'target') {
+      return [{ u: 0.5, v: 0, dir: 'top', type: 'in' }];
     }
+    return [...outPorts, { u: 0.5, v: 0, dir: 'top', type: 'in' }];
+  }
 
-    btnOpenSettings.addEventListener('click', () => { modalSettings.classList.add('is-open'); });
-    btnCloseSettings.addEventListener('click', () => { modalSettings.classList.remove('is-open'); });
-    btnUploadBg.addEventListener('click', () => inputBgFile.click());
-
-    inputBgFile.addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        const b64 = evt.target.result;
-        try {
-          localStorage.setItem('ws_app_bg', b64);
-          document.body.style.backgroundImage = `url(${b64})`;
-          document.body.style.backgroundSize = 'cover';
-          document.body.style.backgroundPosition = 'center';
-          document.body.classList.add('has-bg');
-          showToast("Latar belakang berhasil diubah");
-          modalSettings.classList.remove('is-open');
-        } catch(err) {
-          showToast("Gambar terlalu besar untuk memori!");
-        }
-      };
-      reader.readAsDataURL(file);
-      this.value = '';
-    });
-
-    btnRemoveBg.addEventListener('click', () => {
-      localStorage.removeItem('ws_app_bg');
-      document.body.style.backgroundImage = 'none';
-      document.body.classList.remove('has-bg');
-      showToast("Latar belakang aplikasi dihapus");
-      modalSettings.classList.remove('is-open');
-    });
-
-    // --- 1. LOCAL STORAGE INIT ---
-    let appData = JSON.parse(localStorage.getItem('ws_kanban_data')) || [];
-    function saveData() { localStorage.setItem('ws_kanban_data', JSON.stringify(appData)); }
-
-    // --- NAVIGATION LOGIC ---
-    navItems.forEach(item => {
-      item.addEventListener('click', () => {
-        if(item.id === 'btnOpenSettings') return; 
-        
-        navItems.forEach(n => { if(n.id !== 'btnOpenSettings') n.classList.remove('active') });
-        item.classList.add('active');
-        
-        const menu = item.getAttribute('data-menu');
-        if (menu === 'home') {
-          globalHeaderTitle.textContent = "Task Manager";
-          mainGrid.style.display = 'none';
-          homeLayout.style.display = 'grid';
-          renderHomeGrid();
-        } else if (menu === 'list') {
-          globalHeaderTitle.textContent = "Task Manager";
-          mainGrid.style.display = 'grid';
-          homeLayout.style.display = 'none';
-          renderList();
-        }
-      });
-    });
-
-    // App Launcher Toggle (Mode Minimize saat diklik tutup/buka)
-    btnAppLauncher.addEventListener('click', (e) => {
-        e.stopPropagation();
-        appLauncherMenu.classList.toggle('is-open');
-    });
-    
-    appLauncherMenu.addEventListener('click', (e) => { e.stopPropagation(); });
-    
-    document.addEventListener('click', (e) => {
-        if(!e.target.closest('#appLauncherMenu') && !e.target.closest('#btnAppLauncher')) {
-            appLauncherMenu.classList.remove('is-open');
-        }
-    });
-
-    // --- FITUR KLIK ICON LAUNCHER TEROTOMATISASI (MULTI-IFRAME BACKGROUND) ---
-    const appIcons = document.querySelectorAll('.app-icon');
-    
-    appIcons.forEach(icon => {
-        icon.addEventListener('click', () => {
-            const appSrc = icon.getAttribute('data-src');
-            const title = icon.getAttribute('data-title');
-            
-            if (appSrc) {
-                appLauncherMenu.classList.add('is-expanded');
-                appLauncherGrid.style.display = 'none';
-                appIframeHeader.style.display = 'flex';
-                appIframeBody.style.display = 'block';
-                appNameTitle.textContent = title;
-                
-                // Cari iframe yang src-nya sesuai
-                let existingIframe = appIframeBody.querySelector(`iframe[data-src="${appSrc}"]`);
-                
-                // Jika tidak ada iframe untuk aplikasi ini, buat yang baru
-                if (!existingIframe) {
-                    existingIframe = document.createElement('iframe');
-                    existingIframe.src = appSrc;
-                    existingIframe.setAttribute('data-src', appSrc);
-                    existingIframe.style.width = '100%';
-                    existingIframe.style.height = '100%';
-                    existingIframe.style.border = 'none';
-                    existingIframe.style.position = 'absolute'; // Ditumpuk di area yang sama
-                    existingIframe.style.top = '0';
-                    existingIframe.style.left = '0';
-                    appIframeBody.appendChild(existingIframe);
-                }
-                
-                // Sembunyikan semua iframe yang ada (minimize)
-                const allIframes = appIframeBody.querySelectorAll('iframe');
-                allIframes.forEach(ifr => {
-                    ifr.style.display = 'none';
-                });
-                
-                // Tampilkan hanya iframe yang sesuai dengan tombol yang diklik
-                existingIframe.style.display = 'block';
-                
-            } else {
-                showToast("Aplikasi belum tersedia.");
-            }
-        });
-    });
-
-    btnBackAppGrid.addEventListener('click', () => {
-        appLauncherMenu.classList.remove('is-expanded');
-        appLauncherGrid.style.display = 'grid';
-        appIframeHeader.style.display = 'none';
-        appIframeBody.style.display = 'none';
-        
-        // Iframe TIDAK dihapus atau disetel ulang. Mereka tetap berada di dalam DOM
-        // sehingga proses (seperti pemutar musik atau state whiteboard) tetap berjalan di background.
-    });
-
-
-    function renderHomeGrid() {
-      const container = document.getElementById('homeGrid');
-      container.innerHTML = '';
-      
-      const activeItems = appData.filter(d => !d.checked).sort((a, b) => (a.order || 0) - (b.order || 0));
-      const completedItems = appData.filter(d => d.checked);
-      
-      if(activeItems.length === 0 && completedItems.length === 0) {
-        container.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 40px; color:var(--icon-color); font-size:14px;">Belum ada pekerjaan.</div>`;
-        return;
-      }
-      
-      const renderCard = (item) => {
-        const card = document.createElement('div');
-        card.className = "home-card-item";
-        
-        card.onclick = () => {
-          navItems.forEach(n => n.classList.remove('active'));
-          navItems[1].classList.add('active'); 
-          
-          mainGrid.style.display = 'grid';
-          homeLayout.style.display = 'none';
-          
-          appData.forEach(d => d.active = false);
-          item.active = true;
-          saveData();
-          renderList();
-          if (window.innerWidth <= 991) populateInfoPanel(item, true);
-        };
-        
-        const imgWrap = document.createElement('div');
-        imgWrap.style.cssText = "position: relative; width: 100%; aspect-ratio: 3/4; background: rgba(0,0,0,0.02); border: 1px solid var(--border-medium); border-radius: 12px; overflow: hidden; display:flex; align-items:center; justify-content:center;";
-        
-        if (item.images && item.images.length > 0) {
-          imgWrap.innerHTML = `<img src="${item.images[0]}" style="width: 100%; height: 100%; object-fit: cover;">`;
-        } else {
-          imgWrap.innerHTML = `<svg style="width:32px;height:32px; stroke:var(--border-medium);"><use href="#icon-empty"></use></svg>`;
-        }
-
-        if (item.checked) {
-          const overlay = document.createElement('div');
-          overlay.style.cssText = "position: absolute; inset: 0; background: rgba(5, 150, 105, 0.85); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 15px; backdrop-filter: blur(2px);";
-          overlay.innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; gap:8px;"><svg style="width:24px;height:24px;stroke-width:2.5;"><use href="#icon-check-circle"></use></svg>Selesai</div>`;
-          imgWrap.appendChild(overlay);
-        }
-        
-        const title = document.createElement('div');
-        title.style.cssText = "font-size: 13px; font-weight: 600; color: var(--text-main); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px;";
-        title.textContent = item.title;
-        if(item.checked) title.style.color = "var(--text-muted)";
-        
-        card.appendChild(imgWrap);
-        card.appendChild(title);
-        return card;
-      };
-
-      activeItems.forEach(item => container.appendChild(renderCard(item)));
-
-      if (completedItems.length > 0) {
-        const separator = document.createElement('div');
-        separator.style.cssText = "grid-column: 1/-1; margin-top: 16px; padding-top: 24px; border-top: 1px dashed var(--border-medium); font-size: 13px; font-weight: 600; color: var(--text-muted); display:flex; align-items:center; gap:8px;";
-        separator.innerHTML = `<svg style="width:16px;height:16px;"><use href="#icon-check-circle"></use></svg> Pekerjaan Selesai`;
-        container.appendChild(separator);
-        
-        completedItems.forEach(item => container.appendChild(renderCard(item)));
-      }
+  // 3. Process (Kotak) & 4. Data / IO (Jajaran Genjang)
+  if (shape === 'rect' || shape === 'parallelogram') {
+    // MAKSIMAL 1 OUTPUT KELUAR
+    const canOut = outLinks.length < 1;
+    let ports = [
+      { u: 0.5, v: 0, dir: 'top', type: 'in' },
+      { u: 0, v: 0.5, dir: 'left', type: 'in' },
+      { u: 1, v: 0.5, dir: 'right', type: 'in' }
+    ];
+    if (canOut) {
+      ports.push({ u: 0.5, v: 1, dir: 'bottom', type: 'out' });
+      ports.push({ u: 1, v: 0.5, dir: 'right', type: 'out' });
+      ports.push({ u: 0, v: 0.5, dir: 'left', type: 'out' });
     }
+    if (role === 'source') return ports.filter(p => p.type === 'out');
+    if (role === 'target') return ports.filter(p => p.type === 'in');
+    return ports;
+  }
 
-    // --- 2. RENDER LIST ---
-    function renderList() {
-      if (appData.length === 0) {
-        list.innerHTML = `<div class="info-empty" style="margin-top: 40px;">Belum ada pekerjaan.<br>Klik tombol + untuk menambah.</div>`;
-        closeInfoPanel();
-        return;
-      }
+  return [
+    { u: 0.5, v: 0, dir: 'top', type: 'both' },
+    { u: 1, v: 0.5, dir: 'right', type: 'both' },
+    { u: 0.5, v: 1, dir: 'bottom', type: 'both' },
+    { u: 0, v: 0.5, dir: 'left', type: 'both' }
+  ];
+}
 
-      const activeItems = appData.filter(d => !d.checked).sort((a, b) => (a.order || 0) - (b.order || 0));
-      const completedItems = appData.filter(d => d.checked);
+function setTool(tool) {
+  if (tool === activeTool && tool !== 'shape') return;
+  lastTool = activeTool;
+  activeTool = tool;
+  toolPointer.classList.toggle('active', tool === 'pointer');
+  toolText.classList.toggle('active', tool === 'text');
+  toolShape.classList.toggle('active', tool === 'shape');
+  toolLink.classList.toggle('active', tool === 'link');
+  toolPan.classList.toggle('active', tool === 'pan');
+  connSourcePin = null;
+  hoveredPort = null;
+  updateCursor();
+  draw();
+}
 
-      const createCardHTML = (item) => {
-        const attachmentIcon = (item.images && item.images.length > 0) 
-          ? `<div class="meta-item" title="Ada Lampiran"><svg class="icon"><use href="#icon-paperclip"></use></svg></div>` 
-          : '';
+function toggleTool() {
+  const target = lastTool || 'pointer';
+  setTool(target);
+}
 
-        return `
-        <div class="card ${item.active ? 'is-active' : ''} ${item.checked ? 'is-completed' : ''}" data-id="${item.id}">
-          ${!item.checked ? `<div class="drag-handle" title="Geser Urutan"><svg><use href="#icon-drag"></use></svg></div>` : ''}
-          <div class="card-content">
-            <div class="content-top">
-              <span class="item-qty">${item.qty} pcs</span>
-              <span class="item-title" title="${item.title}">${item.title}</span>
-            </div>
-            <div class="content-bottom">
-              <span class="badge-status" style="background-color: ${item.checked ? 'var(--icon-color)' : 'var(--primary)'}">${item.status}</span>
-              <div class="meta-item"><svg class="icon"><use href="#icon-task"></use></svg><span>${item.taskDone}/${item.taskTotal}</span></div>
-              ${attachmentIcon}
-            </div>
-          </div>
-          <div class="item-datetime">
-            <span>${item.time}</span>
-            <span>${item.dateStr}</span>
-          </div>
-        </div>
-        `;
-      };
+toolPointer.onclick = () => { closeFlyouts(); setTool('pointer'); };
+toolText.onclick = () => { closeFlyouts(); setTool('text'); };
+toolShape.onclick = (e) => {
+  e.stopPropagation();
+  const open = shapeFlyout.classList.contains('open');
+  closeDropdowns();
+  if (!open) shapeFlyout.classList.add('open');
+  setTool('shape');
+};
 
-      let htmlContent = activeItems.map(createCardHTML).join('');
+shapeFlyout.querySelectorAll('.shape-item-btn').forEach(btn => {
+  btn.onclick = (e) => {
+    e.stopPropagation();
+    currentShapeType = btn.getAttribute('data-shape');
+    shapeFlyout.classList.remove('open');
+    setTool('shape');
+  };
+});
 
-      if (completedItems.length > 0) {
-        htmlContent += `<div class="completed-label"><svg style="width:16px;height:16px;"><use href="#icon-check-circle"></use></svg> Selesai</div>`;
-        htmlContent += completedItems.map(createCardHTML).join('');
-      }
+toolLink.onclick = () => { closeFlyouts(); setTool('link'); };
+toolPan.onclick = () => { closeFlyouts(); setTool('pan'); };
 
-      list.innerHTML = htmlContent;
+function closeFlyouts() {
+  shapeFlyout.classList.remove('open');
+}
 
-      const activeItem = appData.find(d => d.active);
-      if (activeItem) populateInfoPanel(activeItem, false);
-      else closeInfoPanel();
-    }
+function updateCursor() {
+  if (isPanning || isMiddlePanning) {
+    c.style.cursor = 'grabbing';
+    return;
+  }
+  if (activeTool === 'pan') {
+    c.style.cursor = 'grab';
+  } else if (activeTool === 'link') {
+    c.style.cursor = hoveredPort ? 'pointer' : 'crosshair';
+  } else if (activeTool === 'text') {
+    c.style.cursor = 'text';
+  } else if (activeTool === 'shape') {
+    c.style.cursor = 'crosshair';
+  } else {
+    c.style.cursor = 'default';
+  }
+}
 
-    // --- 3. WORKSPACE LOGIC ---
-    function populateInfoPanel(item, isUserClick = true) {
-      infoEmpty.style.display = 'none';
-      infoDetail.style.display = 'flex';
-      infoPanelHeader.style.display = 'flex';
-      infoFooter.style.display = 'flex';
-      
-      detailTitle.value = item.title;
-      detailQty.value = item.qty;
-      detailDescription.value = item.description || '';
-      detailStatusBadge.textContent = item.status;
-      deadlineDisplay.textContent = `${item.time} | ${item.dateStr}`;
-      
-      updateWorkspaceDoneState(item.checked);
-      renderSubtasks(item);
-      renderMedia(item);
+function sState() {
+  undoSt.push(JSON.stringify({ cards, connections }));
+  redoSt = [];
+  if (undoSt.length > 50) undoSt.shift();
+}
 
-      if (isUserClick && window.innerWidth <= 991) {
-        mainGrid.classList.add('mobile-detail-open');
-        infoPanel.classList.add('is-open');
-      }
-    }
+function undo() {
+  closeEditor();
+  if (!undoSt.length) return;
+  redoSt.push(JSON.stringify({ cards, connections }));
+  const st = JSON.parse(undoSt.pop());
+  cards = st.cards;
+  connections = st.connections || [];
+  restoreMediaElements();
+  selectedIds.clear();
+  selectedLinkId = null;
+  resizeCardId = null;
+  connSourcePin = null;
+  draw();
+}
 
-    function closeInfoPanel() {
-      infoPanel.classList.remove('is-open');
-      mainGrid.classList.remove('mobile-detail-open');
-      sheetBackdrop.classList.remove('is-open');
-      infoPanelHeader.style.display = 'none';
-      infoFooter.style.display = 'none';
-      
-      if(window.innerWidth <= 991) {
-          appData.forEach(d => d.active = false);
-          saveData();
-          list.querySelectorAll('.card').forEach(c => c.classList.remove('is-active'));
-      }
-    }
+function redo() {
+  closeEditor();
+  if (!redoSt.length) return;
+  undoSt.push(JSON.stringify({ cards, connections }));
+  const st = JSON.parse(redoSt.pop());
+  cards = st.cards;
+  connections = st.connections || [];
+  restoreMediaElements();
+  selectedIds.clear();
+  selectedLinkId = null;
+  resizeCardId = null;
+  connSourcePin = null;
+  draw();
+}
 
-    function updateWorkspaceDoneState(isCompleted) {
-      if (isCompleted) {
-        btnToggleDone.classList.add('is-done');
-        btnDoneText.textContent = "Buka Kembali";
+function restoreMediaElements() {
+  domMediaMap.forEach(el => el.remove());
+  domMediaMap.clear();
+  cards.forEach(cd => {
+    if (cd.type === 'media') {
+      if (cd.mediaType === 'image') {
+        const img = new Image();
+        img.src = cd.src;
+        cd._img = img;
+        img.onload = () => draw();
       } else {
-        btnToggleDone.classList.remove('is-done');
-        btnDoneText.textContent = "Tandai Selesai";
+        createMediaDom(cd);
       }
     }
+  });
+}
 
-    detailTitle.addEventListener('input', function() {
-      const activeItem = appData.find(d => d.active);
-      if(activeItem) {
-        activeItem.title = this.value;
-        saveData();
-        const cardTitleDOM = document.querySelector(`.card[data-id="${activeItem.id}"] .item-title`);
-        if(cardTitleDOM) cardTitleDOM.textContent = this.value || 'Tanpa Judul';
-      }
-    });
+function exportToJson() {
+  const exportData = {
+    version: 2,
+    savedAt: new Date().toISOString(),
+    cards: cards.map(c => {
+      const copy = { ...c };
+      delete copy._img;
+      return copy;
+    }),
+    connections: connections
+  };
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `flowchart-board-${Date.now()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
-    detailQty.addEventListener('input', function() {
-      const activeItem = appData.find(d => d.active);
-      if(activeItem) {
-        activeItem.qty = parseInt(this.value) || 0;
-        saveData();
-        const cardQtyDOM = document.querySelector(`.card[data-id="${activeItem.id}"] .item-qty`);
-        if(cardQtyDOM) cardQtyDOM.textContent = `${activeItem.qty} pcs`;
-      }
-    });
+document.getElementById('mExportJson').onclick = exportToJson;
+document.getElementById('mImportJson').onclick = () => jsonInp.click();
 
-    detailDescription.addEventListener('input', function() {
-      const activeItem = appData.find(d => d.active);
-      if(activeItem) {
-        activeItem.description = this.value;
-        saveData();
-      }
-    });
-
-    // Subtask Logic
-    function updateSubtaskProgress(item) {
-      if(!item.subtasks) return;
-      item.taskTotal = item.subtasks.length || 0;
-      item.taskDone = item.subtasks.filter(s => s.done).length || 0;
-      renderList();
-    }
-
-    function renderSubtasks(item) {
-      const listContainer = document.getElementById('subtaskList');
-      listContainer.innerHTML = '';
-      
-      if (!item.subtasks) item.subtasks = [];
-      
-      item.subtasks.forEach((sub, index) => {
-        const card = document.createElement('div');
-        card.className = `subtask-card ${sub.done ? 'is-done' : ''}`;
-        
-        const chk = document.createElement('input');
-        chk.type = 'checkbox';
-        chk.className = 'subtask-checkbox';
-        chk.checked = sub.done;
-        chk.onchange = () => {
-          sub.done = chk.checked;
-          updateSubtaskProgress(item);
-          saveData();
-          renderSubtasks(item);
-        };
-        
-        const inp = document.createElement('input');
-        inp.type = 'text';
-        inp.className = 'subtask-input';
-        inp.value = sub.title;
-        inp.placeholder = 'Nama subtask...';
-        inp.oninput = (e) => {
-          sub.title = e.target.value;
-          saveData();
-        };
-        
-        inp.onkeydown = (e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            document.getElementById('btnAddSubtask').click();
-          }
-        };
-        
-        const del = document.createElement('button');
-        del.className = 'btn-del-subtask';
-        del.title = "Hapus";
-        del.innerHTML = '<svg><use href="#icon-close"></use></svg>';
-        del.onclick = () => {
-          item.subtasks.splice(index, 1);
-          updateSubtaskProgress(item);
-          saveData();
-          renderSubtasks(item);
-        };
-        
-        card.appendChild(chk);
-        card.appendChild(inp);
-        card.appendChild(del);
-        listContainer.appendChild(card);
-      });
-    }
-
-    document.getElementById('btnAddSubtask').addEventListener('click', () => {
-      const activeItem = appData.find(d => d.active);
-      if(!activeItem) return;
-      if(!activeItem.subtasks) activeItem.subtasks = [];
-      
-      activeItem.subtasks.push({ id: Date.now(), title: '', done: false });
-      updateSubtaskProgress(activeItem);
-      saveData();
-      renderSubtasks(activeItem);
-      
-      setTimeout(() => {
-        const inputs = document.querySelectorAll('.subtask-input');
-        if(inputs.length > 0) inputs[inputs.length - 1].focus();
-      }, 50);
-    });
-
-    document.getElementById('btnPrevStatus').addEventListener('click', () => changeStatus(-1));
-    document.getElementById('btnNextStatus').addEventListener('click', () => changeStatus(1));
-
-    function changeStatus(direction) {
-      const activeItem = appData.find(d => d.active);
-      if(!activeItem) return;
-
-      let currentIndex = STATUS_LIST.indexOf(activeItem.status);
-      if (currentIndex === -1) currentIndex = 0;
-      
-      let newIndex = (currentIndex + direction + STATUS_LIST.length) % STATUS_LIST.length;
-      activeItem.status = STATUS_LIST[newIndex];
-      saveData();
-      
-      detailStatusBadge.textContent = activeItem.status;
-      const cardBadgeDOM = document.querySelector(`.card[data-id="${activeItem.id}"] .badge-status`);
-      if(cardBadgeDOM) cardBadgeDOM.textContent = activeItem.status;
-    }
-
-    btnToggleDone.addEventListener('click', () => {
-      const activeItem = appData.find(d => d.active);
-      if(!activeItem) return;
-
-      activeItem.checked = !activeItem.checked;
-      saveData();
-      updateWorkspaceDoneState(activeItem.checked);
-      renderList();
-    });
-
-    list.addEventListener('click', (e) => {
-      const card = e.target.closest('.card');
-      if (!card || isDragging || e.target.closest('.drag-handle')) return;
-      
-      const id = parseInt(card.getAttribute('data-id'));
-      const item = appData.find(d => d.id === id);
-      if (!item) return;
-      
-      appData.forEach(d => d.active = false);
-      item.active = true;
-      saveData();
-      
-      list.querySelectorAll('.card').forEach(c => c.classList.remove('is-active'));
-      card.classList.add('is-active');
-
-      populateInfoPanel(item, true);
-    });
-
-    sheetBackdrop.addEventListener('click', closeInfoPanel);
-    document.getElementById('btnCloseSheet').addEventListener('click', closeInfoPanel);
-
-    // --- 4. MEDIA ATTACHMENT LOGIC (Dibatasi 1 Media) ---
-    btnAddMedia.addEventListener('click', () => {
-      const activeItem = appData.find(d => d.active);
-      if (activeItem) mediaInput.click();
-      else showToast("Pilih pekerjaan terlebih dahulu");
-    });
-
-    mediaInput.addEventListener('change', function(e) {
-      const activeItem = appData.find(d => d.active);
-      if (!activeItem) return;
-      
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        activeItem.images = [evt.target.result];
-        saveData();
-        renderMedia(activeItem);
-        renderList(); 
-      };
-      reader.readAsDataURL(file);
-      this.value = '';
-    });
-
-    function renderMedia(item) {
-      mediaGallery.innerHTML = '';
-      
-      if (!item.images || item.images.length === 0) {
-        mediaGallery.innerHTML = `<div id="mediaEmpty" style="text-align: center; color: var(--icon-color); font-size: 13px; margin-top: 40px;">Belum ada lampiran.</div>`;
-        btnAddMedia.style.display = 'inline-flex';
+jsonInp.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!Array.isArray(data.cards)) {
+        alert('File JSON tidak valid!');
         return;
       }
-      
-      btnAddMedia.style.display = 'none'; 
-      
-      item.images.forEach((imgSrc, index) => {
-        const div = document.createElement('div');
-        div.className = 'media-item';
-        
-        const img = document.createElement('img');
-        img.src = imgSrc;
-        img.className = 'media-thumbnail';
-        img.onclick = () => openPreview(imgSrc);
-        
-        const menuWrap = document.createElement('div');
-        menuWrap.className = 'media-menu-wrapper';
-        
-        const menuBtn = document.createElement('button');
-        menuBtn.className = 'media-menu-btn';
-        menuBtn.innerHTML = '<svg style="width:16px;height:16px;"><use href="#icon-dots-vertical"></use></svg>';
-        
-        const dropdown = document.createElement('div');
-        dropdown.className = 'media-dropdown';
-        
-        const delBtn = document.createElement('button');
-        delBtn.innerHTML = '<svg style="width:12px;height:12px;stroke-width:2;"><use href="#icon-close"></use></svg> Hapus';
-        delBtn.onclick = (e) => {
-           e.stopPropagation();
-           item.images.splice(index, 1);
-           saveData();
-           renderMedia(item);
-           renderList(); 
+      sState();
+      cards = data.cards;
+      connections = data.connections || [];
+      restoreMediaElements();
+      selectedIds.clear();
+      selectedLinkId = null;
+      resizeCardId = null;
+      connSourcePin = null;
+      draw();
+      zoomToFit();
+    } catch (err) {
+      alert('Gagal membaca file JSON!');
+    }
+  };
+  reader.readAsText(file);
+  jsonInp.value = '';
+});
+
+function copyCard() {
+  if (!selectedIds.size) return;
+  clip = cards.filter(c => selectedIds.has(c.id)).map(c => JSON.parse(JSON.stringify(c)));
+  lastCopySource = 'internal';
+  try {
+    const textRepr = clip.map(c => c.raw || '').filter(Boolean).join('\n---\n');
+    if (textRepr) navigator.clipboard.writeText(textRepr).catch(()=>{});
+  } catch(e){}
+}
+
+function cutCard() {
+  if (!selectedIds.size) return;
+  closeEditor();
+  sState();
+  copyCard();
+  const delIds = new Set(selectedIds);
+  delIds.forEach(id => {
+    if (domMediaMap.has(id)) {
+      domMediaMap.get(id).remove();
+      domMediaMap.delete(id);
+    }
+  });
+  cards = cards.filter(c => !delIds.has(c.id));
+  connections = connections.filter(cn => !delIds.has(cn.fromId) && !delIds.has(cn.toId));
+  if (resizeCardId && delIds.has(resizeCardId)) resizeCardId = null;
+  selectedIds.clear();
+  draw();
+}
+
+async function pasteCard() {
+  closeEditor();
+  if (lastCopySource === 'internal' && clip.length > 0) {
+    sState();
+    selectedIds.clear();
+    selectedLinkId = null;
+    clip.forEach(c => {
+      const cd = JSON.parse(JSON.stringify(c));
+      cd.id = Date.now() + Math.random();
+      cd.x += 24;
+      cd.y += 24;
+      if (cd.type === 'media') {
+        if (cd.mediaType === 'image') {
+          const img = new Image();
+          img.src = cd.src;
+          cd._img = img;
+          img.onload = () => draw();
+        } else {
+          createMediaDom(cd);
+        }
+      }
+      cards.push(cd);
+      selectedIds.add(cd.id);
+    });
+    draw();
+    return;
+  }
+
+  try {
+    const text = await navigator.clipboard.readText();
+    if (text) {
+      createAutoFitTextCard(text, curX, curY);
+    }
+  } catch (err) {
+    if (clip.length > 0) {
+      lastCopySource = 'internal';
+      pasteCard();
+    }
+  }
+}
+
+function dupCard() {
+  if (!selectedIds.size) return;
+  copyCard();
+  pasteCard();
+}
+
+function delSelected() {
+  let changed = false;
+  if (selectedLinkId) {
+    sState();
+    connections = connections.filter(cn => cn.id !== selectedLinkId);
+    selectedLinkId = null;
+    changed = true;
+  }
+  if (selectedIds.size) {
+    if (!changed) sState();
+    closeEditor();
+    const delIds = new Set(selectedIds);
+    delIds.forEach(id => {
+      if (domMediaMap.has(id)) {
+        domMediaMap.get(id).remove();
+        domMediaMap.delete(id);
+      }
+    });
+    cards = cards.filter(c => !delIds.has(c.id));
+    connections = connections.filter(cn => !delIds.has(cn.fromId) && !delIds.has(cn.toId));
+    if (resizeCardId && delIds.has(resizeCardId)) resizeCardId = null;
+    selectedIds.clear();
+    changed = true;
+  }
+  if (changed) draw();
+}
+
+function resetOriginSize() {
+  if (!selectedIds.size) return;
+  sState();
+  cards.filter(c => selectedIds.has(c.id)).forEach(cd => {
+    cd.w = cd.baseW;
+    cd.h = cd.baseH;
+    cd.scale = 1;
+    cd.ratio = cd.baseW / cd.baseH;
+    if (cd.type === 'text' || cd.type === 'shape') updateCardLayout(cd, cd.raw);
+  });
+  draw();
+}
+
+function selectAll() {
+  selectedIds.clear();
+  cards.forEach(c => selectedIds.add(c.id));
+  draw();
+}
+
+function zoomToFit() {
+  if (!cards.length) return;
+  closeEditor();
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  cards.forEach(c => {
+    minX = Math.min(minX, c.x);
+    minY = Math.min(minY, c.y);
+    maxX = Math.max(maxX, c.x + c.w);
+    maxY = Math.max(maxY, c.y + c.h);
+  });
+  const bw = maxX - minX, bh = maxY - minY, pad = 60, availW = w - 20 - pad * 2, availH = h - 20 - pad * 2;
+  let ns = Math.min(availW / bw, availH / bh);
+  ns = Math.min(4, Math.max(0.1, ns));
+  s = ns;
+  ox = 20 + pad + (availW - bw * s) / 2 - minX * s;
+  oy = 20 + pad + (availH - bh * s) / 2 - minY * s;
+  updateCoord();
+  draw();
+}
+
+// OPERASI PERATAAN KARTU (ALIGN: T, B, L, R, C, E)
+function alignSelectedCards(type) {
+  if (selectedIds.size < 2) return;
+  sState();
+  const selCards = cards.filter(c => selectedIds.has(c.id));
+
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  selCards.forEach(cd => {
+    minX = Math.min(minX, cd.x);
+    maxX = Math.max(maxX, cd.x + cd.w);
+    minY = Math.min(minY, cd.y);
+    maxY = Math.max(maxY, cd.y + cd.h);
+  });
+
+  const centerH = (minX + maxX) / 2;
+  const centerV = (minY + maxY) / 2;
+
+  selCards.forEach(cd => {
+    if (type === 'top') cd.y = minY;
+    else if (type === 'bottom') cd.y = maxY - cd.h;
+    else if (type === 'left') cd.x = minX;
+    else if (type === 'right') cd.x = maxX - cd.w;
+    else if (type === 'centerH') cd.x = centerH - cd.w / 2;
+    else if (type === 'centerV') cd.y = centerV - cd.h / 2;
+  });
+  draw();
+}
+
+document.getElementById('ctxAlignTop').onclick = () => alignSelectedCards('top');
+document.getElementById('ctxAlignBottom').onclick = () => alignSelectedCards('bottom');
+document.getElementById('ctxAlignLeftEdge').onclick = () => alignSelectedCards('left');
+document.getElementById('ctxAlignRightEdge').onclick = () => alignSelectedCards('right');
+document.getElementById('ctxAlignCenterH').onclick = () => alignSelectedCards('centerH');
+document.getElementById('ctxAlignCenterV').onclick = () => alignSelectedCards('centerV');
+
+function r() {
+  w = c.width = window.innerWidth;
+  h = c.height = window.innerHeight;
+  if (!init) {
+    ox = 0; oy = 0; curX = 0; curY = 0;
+    init = true;
+  }
+  updateCoord();
+  if (editingCard) syncEditorPos();
+  draw();
+}
+
+function updateCoord() {
+  const wx = Math.round((curX - ox) / s), wy = Math.round((curY - oy) / s);
+  coord.textContent = `X: ${wx}, Y: ${wy}`;
+}
+
+function updateSelInfo() {
+  if (selectedLinkId) {
+    selInfo.textContent = `Link terpilih: 1`;
+  } else {
+    selInfo.textContent = `Terpilih: ${selectedIds.size} / ${cards.length}`;
+  }
+}
+
+function applyZoom(f, mx, my) {
+  const ns = Math.min(4, Math.max(0.1, s * f));
+  const actF = ns / s;
+  ox = mx - (mx - ox) * actF;
+  oy = my - (my - oy) * actF;
+  s = ns;
+  updateCoord();
+  if (editingCard) syncEditorPos();
+  draw();
+}
+
+function updateCardLayout(cd, txt) {
+  cd.raw = txt;
+  const scale = cd.scale || 1, effFs = 14 * scale, effLh = 20 * scale, effPad = 14 * scale;
+  x.font = `${effFs}px sans-serif`;
+
+  const lines = txt.split('\n');
+  let maxLineW = 0;
+  lines.forEach(l => {
+    const lw = x.measureText(l || ' ').width;
+    if (lw > maxLineW) maxLineW = lw;
+  });
+
+  if (cd.type === 'text') {
+    const targetW = Math.max(160 * scale, maxLineW + effPad * 2);
+    const targetH = Math.max(70 * scale, lines.length * effLh + effPad * 2);
+    cd.w = targetW;
+    cd.h = targetH;
+    cd.baseW = targetW / scale;
+    cd.baseH = targetH / scale;
+    cd.ratio = cd.w / cd.h;
+    cd.lines = lines;
+  } else if (cd.type === 'shape') {
+    const targetW = Math.max((cd.baseW || 150) * scale, maxLineW + effPad * 3);
+    const targetH = Math.max((cd.baseH || 80) * scale, lines.length * effLh + effPad * 2.5);
+    cd.w = targetW;
+    cd.h = targetH;
+    cd.lines = lines;
+  }
+}
+
+function createAutoFitTextCard(txt, px, py) {
+  sState();
+  const defW = 160, defH = 70;
+  const wx = (px - ox) / s - defW / 2, wy = (py - oy) / s - defH / 2;
+  const cd = {
+    id: Date.now() + Math.random(),
+    type: 'text',
+    x: wx, y: wy,
+    w: defW, h: defH,
+    baseW: defW, baseH: defH,
+    scale: 1, ratio: defW / defH,
+    align: 'center',
+    lines: [], raw: txt || ''
+  };
+  updateCardLayout(cd, cd.raw);
+  cards.push(cd);
+  selectedIds.clear();
+  selectedLinkId = null;
+  selectedIds.add(cd.id);
+  draw();
+  return cd;
+}
+
+function createFlowchartShape(shapeType, px, py) {
+  sState();
+  const defW = 150, defH = 80;
+  const wx = (px - ox) / s - defW / 2, wy = (py - oy) / s - defH / 2;
+  let defaultLabel = 'Process';
+  if (shapeType === 'diamond') defaultLabel = 'Kondisi?';
+  else if (shapeType === 'oval') defaultLabel = 'Mulai';
+  else if (shapeType === 'parallelogram') defaultLabel = 'Data Masuk';
+
+  const cd = {
+    id: Date.now() + Math.random(),
+    type: 'shape',
+    shapeType: shapeType,
+    x: wx, y: wy,
+    w: defW, h: defH,
+    baseW: defW, baseH: defH,
+    scale: 1, ratio: defW / defH,
+    align: 'center',
+    lines: [defaultLabel],
+    raw: defaultLabel
+  };
+  updateCardLayout(cd, cd.raw);
+  cards.push(cd);
+  selectedIds.clear();
+  selectedLinkId = null;
+  selectedIds.add(cd.id);
+  draw();
+  return cd;
+}
+
+function createMediaCard(file, px, py) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const src = e.target.result;
+    let mType = 'image';
+    if (file.type.startsWith('video/')) mType = 'video';
+    else if (file.type.startsWith('audio/')) mType = 'audio';
+
+    if (mType === 'image') {
+      const img = new Image();
+      img.onload = () => {
+        sState();
+        let iw = img.naturalWidth, ih = img.naturalHeight, mw = 320, scale = Math.min(1, mw / iw),
+            cw = Math.max(120, iw * scale), ch = Math.max(60, ih * scale);
+        const wx = (px - ox) / s - cw / 2, wy = (py - oy) / s - ch / 2;
+        const cd = {
+          id: Date.now() + Math.random(),
+          type: 'media', mediaType: 'image',
+          x: wx, y: wy, w: cw, h: ch,
+          baseW: cw, baseH: ch, ratio: cw / ch,
+          scale: 1, src: src, _img: img
         };
-        
-        dropdown.appendChild(delBtn);
-        menuWrap.appendChild(menuBtn);
-        menuWrap.appendChild(dropdown);
-
-        div.appendChild(img);
-        div.appendChild(menuWrap);
-        mediaGallery.appendChild(div);
-      });
-    }
-
-    // Modal Preview, Zoom, Panning
-    let pScale = 1;
-    let pX = 0;
-    let pY = 0;
-    let isDraggingImg = false;
-    let startPanX = 0;
-    let startPanY = 0;
-    
-    function openPreview(src) {
-      imgPreview.src = src;
-      pScale = 1; pX = 0; pY = 0;
-      imgPreview.style.transform = `translate(0px, 0px) scale(1)`;
-      modalPreview.classList.add('is-open');
-    }
-
-    btnClosePreview.addEventListener('click', () => { modalPreview.classList.remove('is-open'); });
-    
-    modalPreview.addEventListener('click', (e) => {
-      if(e.target === modalPreview) {
-        modalPreview.classList.remove('is-open');
-      }
-    });
-
-    imgPreview.addEventListener('wheel', (e) => {
-      e.preventDefault();
-      const zoomStep = 0.15;
-      const delta = e.deltaY < 0 ? zoomStep : -zoomStep;
-      const newScale = Math.min(Math.max(0.5, pScale + delta), 5); 
-      
-      if (pScale !== newScale) {
-        const rect = imgPreview.getBoundingClientRect();
-        const mx = e.clientX - rect.left - rect.width / 2;
-        const my = e.clientY - rect.top - rect.height / 2;
-        
-        const scaleRatio = newScale / pScale;
-        pX -= mx * (scaleRatio - 1);
-        pY -= my * (scaleRatio - 1);
-        
-        pScale = newScale;
-        imgPreview.style.transform = `translate(${pX}px, ${pY}px) scale(${pScale})`;
-      }
-    });
-
-    imgPreview.addEventListener('mousedown', (e) => {
-      e.preventDefault(); 
-      isDraggingImg = true;
-      startPanX = e.clientX - pX;
-      startPanY = e.clientY - pY;
-      imgPreview.style.cursor = 'grabbing';
-    });
-
-    window.addEventListener('mousemove', (e) => {
-      if (!isDraggingImg) return;
-      pX = e.clientX - startPanX;
-      pY = e.clientY - startPanY;
-      imgPreview.style.transform = `translate(${pX}px, ${pY}px) scale(${pScale})`;
-    });
-
-    window.addEventListener('mouseup', () => {
-      if(isDraggingImg) {
-        isDraggingImg = false;
-        imgPreview.style.cursor = 'grab';
-      }
-    });
-
-    // --- 5. CUSTOM MODAL DEADLINE LOGIC ---
-    const modalDeadline = document.getElementById('modalDeadline');
-    const inpDay = document.getElementById('inpDay');
-    const inpMonth = document.getElementById('inpMonth');
-    const inpYear = document.getElementById('inpYear');
-    const inpHour = document.getElementById('inpHour');
-    const inpMinute = document.getElementById('inpMinute');
-
-    document.getElementById('btnOpenDeadlineModal').addEventListener('click', () => {
-      const activeItem = appData.find(d => d.active);
-      if(!activeItem) return;
-      
-      const d = activeItem.rawDate ? new Date(activeItem.rawDate) : new Date();
-      inpDay.value = d.getDate();
-      inpMonth.value = d.getMonth();
-      inpYear.value = d.getFullYear();
-      inpHour.value = activeItem.rawDate ? d.getHours().toString().padStart(2, '0') : '';
-      inpMinute.value = activeItem.rawDate ? d.getMinutes().toString().padStart(2, '0') : '';
-
-      modalDeadline.classList.add('is-open');
-    });
-
-    document.getElementById('btnCancelDeadline').addEventListener('click', () => modalDeadline.classList.remove('is-open'));
-
-    const submitDeadlineOnEnter = (e) => {
-      if(e.key === 'Enter') {
-        document.getElementById('btnSubmitDeadline').click();
-      }
-    };
-    [inpDay, inpMonth, inpYear, inpHour, inpMinute].forEach(inp => {
-      inp.addEventListener('keydown', submitDeadlineOnEnter);
-    });
-
-    document.getElementById('btnSubmitDeadline').addEventListener('click', () => {
-      const activeItem = appData.find(d => d.active);
-      if(!activeItem) return;
-
-      const newD = new Date();
-      newD.setFullYear(inpYear.value || newD.getFullYear(), inpMonth.value || newD.getMonth(), inpDay.value || newD.getDate());
-      
-      const hr = inpHour.value !== '' ? parseInt(inpHour.value) : 0;
-      const mn = inpMinute.value !== '' ? parseInt(inpMinute.value) : 0;
-      newD.setHours(hr, mn, 0);
-
-      const timeStr = `${newD.getHours().toString().padStart(2,'0')}:${newD.getMinutes().toString().padStart(2,'0')}`;
-      const dateStr = `${DAY_NAMES[newD.getDay()]}, ${newD.getDate().toString().padStart(2,'0')} ${MONTH_NAMES_SHORT[newD.getMonth()]} ${newD.getFullYear().toString().substr(-2)}`;
-
-      activeItem.rawDate = newD.getTime();
-      activeItem.time = timeStr;
-      activeItem.dateStr = dateStr;
-      
-      saveData();
-      
-      deadlineDisplay.textContent = `${timeStr} | ${dateStr}`;
-      renderList(); 
-
-      modalDeadline.classList.remove('is-open');
-    });
-
-    // --- 6. MODAL TAMBAH DATA BARU ---
-    const modalAdd = document.getElementById('modalAdd');
-    const inputTitle = document.getElementById('inputTitle');
-    const inputQty = document.getElementById('inputQty');
-
-    document.getElementById('btnOpenAddModal').addEventListener('click', () => {
-      inputTitle.value = ''; inputQty.value = '';
-      modalAdd.classList.add('is-open');
-      setTimeout(() => inputTitle.focus(), 100);
-    });
-
-    document.getElementById('btnCancelAdd').addEventListener('click', () => modalAdd.classList.remove('is-open'));
-
-    function submitAdd() {
-      const titleVal = inputTitle.value.trim();
-      const qtyVal = inputQty.value.trim();
-      
-      if (!titleVal) { showToast("Silakan isi Nama Pekerjaan"); return; }
-      
-      const finalQty = qtyVal ? parseInt(qtyVal) : 1; 
-      
-      const timeStr = "-:-";
-      const dateStr = "-, - - -";
-
-      const currentOrders = appData.filter(d=>!d.checked).map(d => d.order || 0);
-      const minOrder = currentOrders.length ? Math.min(...currentOrders) : 0;
-
-      appData.push({
-        id: Date.now(), 
-        title: titleVal, 
-        qty: finalQty,
-        description: '',
-        images: [],
-        subtasks: [],   
-        status: 'List', 
-        taskDone: 0, taskTotal: 0,
-        time: timeStr, 
-        dateStr: dateStr,
-        rawDate: null, 
-        checked: false, 
-        active: false,
-        order: minOrder - 1 
-      });
-
-      saveData();
-      modalAdd.classList.remove('is-open');
-      renderList();
-      list.parentElement.scrollTo({ top: 0, behavior: 'smooth' });
-      showToast("Tugas berhasil ditambahkan");
-    }
-
-    document.getElementById('btnSubmitAdd').addEventListener('click', submitAdd);
-    inputTitle.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitAdd(); });
-    inputQty.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitAdd(); });
-
-    // --- 7. SISTEM DRAG & DROP ---
-    function initDrag(e) {
-      const handle = e.target.closest('.drag-handle');
-      if (!handle) return;
-      
-      draggedCard = handle.closest('.card');
-      if(draggedCard.classList.contains('is-completed')) return; 
-      
-      startY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-      isDragging = false;
-
-      const rect = draggedCard.getBoundingClientRect();
-      placeholder = document.createElement('div');
-      placeholder.className = 'card-placeholder';
-      placeholder.style.height = `${rect.height}px`;
-      list.insertBefore(placeholder, draggedCard);
-
-      Object.assign(draggedCard.style, { position: 'fixed', top: `${rect.top}px`, left: `${rect.left}px`, width: `${rect.width}px` });
-      draggedCard.classList.add('dragging');
-
-      window.addEventListener('mousemove', dragMove, { passive: false });
-      window.addEventListener('touchmove', dragMove, { passive: false });
-      window.addEventListener('mouseup', endDrag);
-      window.addEventListener('touchend', endDrag);
-    }
-
-    function dragMove(e) {
-      if (!draggedCard) return;
-      if (e.cancelable) e.preventDefault(); 
-      isDragging = true;
-
-      const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-      const deltaY = clientY - startY;
-      draggedCard.style.transform = `translate3d(0, ${deltaY}px, 0) scale(1.025)`;
-
-      const midY = draggedCard.getBoundingClientRect().top + (draggedCard.offsetHeight / 2);
-      
-      const otherActiveCards = [...list.querySelectorAll('.card:not(.dragging):not(.is-completed)')];
-      const prevRects = new Map(otherActiveCards.map(c => [c, c.getBoundingClientRect()]));
-      
-      let targetCard = otherActiveCards.find(c => midY < c.getBoundingClientRect().top + c.offsetHeight * 0.65);
-      const insertNode = targetCard || list.querySelector('.completed-label') || null; 
-      
-      if (placeholder.nextSibling !== insertNode) {
-        list.insertBefore(placeholder, insertNode);
-        animateShift(otherActiveCards, prevRects); 
-      }
-    }
-
-    function animateShift(cards, prevRects) {
-      cards.forEach(card => {
-        const deltaY = prevRects.get(card).top - card.getBoundingClientRect().top;
-        if (deltaY !== 0) {
-          card.style.transition = 'none'; card.style.transform = `translateY(${deltaY}px)`;
-          card.offsetHeight; card.style.transition = 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)'; card.style.transform = '';
-        }
-      });
-    }
-
-    function endDrag() {
-      if (!draggedCard) return;
-      
-      list.insertBefore(draggedCard, placeholder);
-      placeholder.remove();
-      Object.assign(draggedCard.style, { position: '', top: '', left: '', width: '', transform: '', transition: '' });
-      draggedCard.classList.remove('dragging');
-      
-      let orderIndex = 0;
-      list.querySelectorAll('.card:not(.is-completed)').forEach(c => {
-        const id = parseInt(c.getAttribute('data-id'));
-        const found = appData.find(d => d.id === id);
-        if (found) found.order = orderIndex++;
-      });
-      saveData();
-
-      draggedCard = placeholder = null;
-      window.removeEventListener('mousemove', dragMove); window.removeEventListener('touchmove', dragMove);
-      window.removeEventListener('mouseup', endDrag); window.removeEventListener('touchend', endDrag);
-      
-      setTimeout(() => isDragging = false, 50);
-    }
-
-    list.addEventListener('mousedown', initDrag);
-    list.addEventListener('touchstart', initDrag, { passive: true });
-
-    // --- 8. EKSPOR / IMPOR JSON ---
-    const btnExport = document.getElementById('btnExport');
-    const btnImport = document.getElementById('btnImport');
-    const fileInput = document.getElementById('fileInput');
-
-    btnExport.addEventListener('click', () => {
-      if(appData.length === 0) { showToast("Tidak ada data untuk diekspor"); return; }
-      const dataStr = JSON.stringify(appData, null, 2);
-      const blob = new Blob([dataStr], {type: "application/json"});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = "kanban_workspace_data.json";
-      a.click();
-      URL.revokeObjectURL(url);
-      showToast("Data berhasil diekspor!");
-    });
-
-    btnImport.addEventListener('click', () => fileInput.click());
-
-    fileInput.addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        try {
-          const importedData = JSON.parse(evt.target.result);
-          if (!Array.isArray(importedData)) throw new Error("Format Array JSON tidak valid");
-          
-          let importCount = 0;
-          importedData.forEach(importedItem => {
-            if(!importedItem.id || !importedItem.title) return;
-            const existingIndex = appData.findIndex(item => item.id === importedItem.id);
-            if (existingIndex !== -1) appData[existingIndex] = importedItem;
-            else appData.push(importedItem);
-            importCount++;
-          });
-
-          if(importCount > 0) {
-            saveData();
-            renderList();
-            showToast(`Berhasil mengimpor ${importCount} data!`);
-          } else {
-            showToast("Tidak ada data valid yang diimpor");
-          }
-        } catch (err) {
-          showToast("Gagal membaca file JSON!");
-        }
+        cards.push(cd);
+        selectedIds.clear();
+        selectedLinkId = null;
+        selectedIds.add(cd.id);
+        draw();
       };
-      reader.readAsText(file);
-      this.value = ''; 
+      img.src = src;
+    } else if (mType === 'video') {
+      sState();
+      const cw = 320, ch = 200, wx = (px - ox) / s - cw / 2, wy = (py - oy) / s - ch / 2;
+      const cd = {
+        id: Date.now() + Math.random(),
+        type: 'media', mediaType: 'video',
+        x: wx, y: wy, w: cw, h: ch,
+        baseW: cw, baseH: ch, ratio: cw / ch,
+        scale: 1, src: src
+      };
+      createMediaDom(cd);
+      cards.push(cd);
+      selectedIds.clear();
+      selectedLinkId = null;
+      selectedIds.add(cd.id);
+      draw();
+    } else if (mType === 'audio') {
+      sState();
+      const cw = 300, ch = 60, wx = (px - ox) / s - cw / 2, wy = (py - oy) / s - ch / 2;
+      const cd = {
+        id: Date.now() + Math.random(),
+        type: 'media', mediaType: 'audio',
+        x: wx, y: wy, w: cw, h: ch,
+        baseW: cw, baseH: ch, ratio: cw / ch,
+        scale: 1, src: src
+      };
+      createMediaDom(cd);
+      cards.push(cd);
+      selectedIds.clear();
+      selectedLinkId = null;
+      selectedIds.add(cd.id);
+      draw();
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function createMediaDom(cd) {
+  let el = domMediaMap.get(cd.id);
+  if (!el) {
+    el = document.createElement('div');
+    el.className = 'dom-media';
+    if (cd.mediaType === 'video') {
+      const v = document.createElement('video');
+      v.src = cd.src; v.controls = true;
+      v.style.width = '100%'; v.style.height = '100%'; v.style.objectFit = 'contain';
+      el.appendChild(v);
+    } else if (cd.mediaType === 'audio') {
+      el.style.background = '#fafafa';
+      const a = document.createElement('audio');
+      a.src = cd.src; a.controls = true; a.style.width = '90%';
+      el.appendChild(a);
+    }
+    mediaContainer.appendChild(el);
+    domMediaMap.set(cd.id, el);
+  }
+}
+
+function syncDomMedia() {
+  cards.forEach(cd => {
+    if (cd.type === 'media' && (cd.mediaType === 'video' || cd.mediaType === 'audio')) {
+      const el = domMediaMap.get(cd.id);
+      if (el) {
+        const sx = cd.x * s + ox, sy = cd.y * s + oy;
+        if (sx + cd.w * s < 20 || sy + cd.h * s < 20 || sx > w || sy > h) {
+          el.style.display = 'none';
+        } else {
+          el.style.display = 'flex';
+          el.style.left = sx + 'px';
+          el.style.top = sy + 'px';
+          el.style.width = cd.w + 'px';
+          el.style.height = cd.h + 'px';
+          el.style.transform = `scale(${s})`;
+        }
+      }
+    }
+  });
+}
+
+function hitCard(wx, wy) {
+  for (let i = cards.length - 1; i >= 0; i--) {
+    const cd = cards[i];
+    if (wx >= cd.x && wx <= cd.x + cd.w && wy >= cd.y && wy <= cd.y + cd.h) return cd;
+  }
+  return null;
+}
+
+function findHoverPort(screenX, screenY) {
+  const tolerance = 24;
+  let closest = null, minD = Infinity;
+
+  const role = connSourcePin ? 'target' : 'source';
+
+  for (let i = cards.length - 1; i >= 0; i--) {
+    const cd = cards[i];
+    if (connSourcePin && cd.id === connSourcePin.cardId) continue;
+
+    const ports = getFlowchartPortsForCard(cd, role);
+    for (const port of ports) {
+      const pwx = cd.x + cd.w * port.u;
+      const pwy = cd.y + cd.h * port.v;
+      const psx = pwx * s + ox;
+      const psy = pwy * s + oy;
+      const dist = Math.hypot(screenX - psx, screenY - psy);
+
+      if (dist <= tolerance && dist < minD) {
+        minD = dist;
+        closest = {
+          cardId: cd.id,
+          u: port.u,
+          v: port.v,
+          dir: port.dir,
+          type: port.type,
+          branch: port.branch,
+          x: pwx,
+          y: pwy,
+          sx: psx,
+          psy: psy
+        };
+      }
+    }
+  }
+  return closest;
+}
+
+function distToSegment(px, py, x1, y1, x2, y2) {
+  const l2 = (x2 - x1) ** 2 + (y2 - y1) ** 2;
+  if (l2 === 0) return Math.hypot(px - x1, py - y1);
+  let t = ((px - x1) * (x2 - x1) + (py - y1) * (y2 - y1)) / l2;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (x1 + t * (x2 - x1)), py - (y1 + t * (y2 - y1)));
+}
+
+function getLinkGeom(cn) {
+  const cardMap = new Map();
+  cards.forEach(cd => cardMap.set(cd.id, cd));
+  const c1 = cardMap.get(cn.fromId), c2 = cardMap.get(cn.toId);
+  if (!c1 || !c2) return null;
+
+  const p1 = { x: c1.x + c1.w * cn.u1, y: c1.y + c1.h * cn.v1 };
+  const p2 = { x: c2.x + c2.w * cn.u2, y: c2.y + c2.h * cn.v2 };
+
+  const dx = p2.x - p1.x, dy = p2.y - p1.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const ux = dx / len, uy = dy / len;
+  const nx = -uy, ny = ux;
+
+  const t = (cn.labelT !== undefined) ? cn.labelT : 0.5;
+  const side = (cn.labelSide !== undefined) ? cn.labelSide : 1;
+
+  const fontPt = (s >= 0.9) ? (13 / s) : (13 / 0.9);
+  const offsetDist = (s >= 0.9) ? (14 / s) : (14 / 0.9);
+
+  const baseX = p1.x + dx * t;
+  const baseY = p1.y + dy * t;
+  const labelX = baseX + nx * (offsetDist * side);
+  const labelY = baseY + ny * (offsetDist * side);
+
+  let angle = Math.atan2(dy, dx);
+  let flip = false;
+
+  if (angle > Math.PI / 2 || angle < -Math.PI / 2) {
+    angle += Math.PI;
+    flip = true;
+  }
+
+  return { p1, p2, dx, dy, len, ux, uy, nx, ny, t, side, fontPt, offsetDist, labelX, labelY, angle, flip };
+}
+
+function hitLinkLabel(wx, wy) {
+  for (let i = connections.length - 1; i >= 0; i--) {
+    const cn = connections[i];
+    if (!cn.label) continue;
+    const geom = getLinkGeom(cn);
+    if (!geom) continue;
+
+    x.save();
+    x.font = `500 ${geom.fontPt}px sans-serif`;
+    const tw = x.measureText(cn.label).width;
+    const th = geom.fontPt * 1.2;
+    x.restore();
+
+    const ldx = wx - geom.labelX, ldy = wy - geom.labelY;
+    const cosA = Math.cos(-geom.angle), sinA = Math.sin(-geom.angle);
+    const localX = ldx * cosA - ldy * sinA;
+    const localY = ldx * sinA + ldy * cosA;
+
+    if (Math.abs(localX) <= tw / 2 + 8 / s && Math.abs(localY) <= th / 2 + 6 / s) {
+      return { cn, geom };
+    }
+  }
+  return null;
+}
+
+function hitLink(wx, wy) {
+  const hitTolerance = 8 / s;
+  for (let i = connections.length - 1; i >= 0; i--) {
+    const cn = connections[i];
+    const geom = getLinkGeom(cn);
+    if (geom) {
+      const d = distToSegment(wx, wy, geom.p1.x, geom.p1.y, geom.p2.x, geom.p2.y);
+      if (d <= hitTolerance) return cn;
+    }
+  }
+  return null;
+}
+
+function hitHandle(cd, px, py) {
+  if (!cd) return null;
+  const hSize = 10,
+        pts = {
+          nw: { x: cd.x * s + ox, y: cd.y * s + oy },
+          ne: { x: (cd.x + cd.w) * s + ox, y: cd.y * s + oy },
+          se: { x: (cd.x + cd.w) * s + ox, y: (cd.y + cd.h) * s + oy },
+          sw: { x: cd.x * s + ox, y: (cd.y + cd.h) * s + oy }
+        };
+  for (const cName in pts) {
+    const pt = pts[cName];
+    if (Math.abs(px - pt.x) <= hSize && Math.abs(py - pt.y) <= hSize) return cName;
+  }
+  return null;
+}
+
+function getCornerCursor(corner) {
+  if (corner === 'nw' || corner === 'se') return 'nwse-resize';
+  if (corner === 'ne' || corner === 'sw') return 'nesw-resize';
+  return 'default';
+}
+
+function startEditCard(cd) {
+  if (!cd || (cd.type !== 'text' && cd.type !== 'shape')) return;
+  editingCard = cd;
+  editor.value = cd.raw;
+  syncEditorPos();
+  editor.style.display = 'block';
+  setTimeout(() => {
+    editor.focus();
+    editor.setSelectionRange(editor.value.length, editor.value.length);
+  }, 10);
+  draw();
+}
+
+function syncEditorPos() {
+  if (!editingCard) return;
+  const scale = editingCard.scale || 1;
+  editor.style.left = (editingCard.x * s + ox) + 'px';
+  editor.style.top = (editingCard.y * s + oy) + 'px';
+  editor.style.width = editingCard.w + 'px';
+  editor.style.height = editingCard.h + 'px';
+  editor.style.transformOrigin = 'top left';
+  editor.style.transform = `scale(${s})`;
+  editor.style.fontSize = (14 * scale) + 'px';
+  editor.style.lineHeight = (20 * scale) + 'px';
+  editor.style.textAlign = editingCard.align || 'center';
+  
+  const lines = (editor.value || '').split('\n');
+  const textBlockH = lines.length * (20 * scale);
+  const padTop = Math.max(8 * scale, (editingCard.h - textBlockH) / 2);
+  editor.style.paddingTop = padTop + 'px';
+  editor.style.paddingLeft = (12 * scale) + 'px';
+  editor.style.paddingRight = (12 * scale) + 'px';
+}
+
+function closeEditor() {
+  if (!editingCard) return;
+  if (editor.value !== editingCard.raw) {
+    sState();
+    updateCardLayout(editingCard, editor.value);
+  }
+  editingCard = null;
+  editor.style.display = 'none';
+  draw();
+}
+
+editor.addEventListener('input', () => {
+  if (editingCard) {
+    updateCardLayout(editingCard, editor.value);
+    syncEditorPos();
+    draw();
+  }
+});
+editor.addEventListener('keydown', e => {
+  e.stopPropagation();
+  if (e.key === 'Escape') closeEditor();
+});
+
+function drawFlowchartPath(ctx, shapeType, x0, y0, w0, h0) {
+  ctx.beginPath();
+  if (shapeType === 'rect') {
+    ctx.roundRect(x0, y0, w0, h0, 4);
+  } else if (shapeType === 'diamond') {
+    ctx.moveTo(x0 + w0 / 2, y0);
+    ctx.lineTo(x0 + w0, y0 + h0 / 2);
+    ctx.lineTo(x0 + w0 / 2, y0 + h0);
+    ctx.lineTo(x0, y0 + h0 / 2);
+    ctx.closePath();
+  } else if (shapeType === 'oval') {
+    const r0 = Math.min(w0, h0) / 2;
+    ctx.roundRect(x0, y0, w0, h0, r0);
+  } else if (shapeType === 'parallelogram') {
+    const skew = w0 * 0.18;
+    ctx.moveTo(x0 + skew, y0);
+    ctx.lineTo(x0 + w0, y0);
+    ctx.lineTo(x0 + w0 - skew, y0 + h0);
+    ctx.lineTo(x0, y0 + h0);
+    ctx.closePath();
+  } else {
+    ctx.roundRect(x0, y0, w0, h0, 6);
+  }
+}
+
+function drawArrowhead(ctx, x2, y2, angle) {
+  const arrowLen = 10 / s;
+  ctx.save();
+  ctx.translate(x2, y2);
+  ctx.rotate(angle);
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(-arrowLen, -arrowLen * 0.45);
+  ctx.lineTo(-arrowLen, arrowLen * 0.45);
+  ctx.closePath();
+  ctx.fillStyle = ctx.strokeStyle;
+  ctx.fill();
+  ctx.restore();
+}
+
+function draw() {
+  z.textContent = Math.round(s * 100) + '%';
+  updateSelInfo();
+  syncDomMedia();
+
+  x.clearRect(0, 0, w, h);
+
+  const baseSize = 24;
+  let step = baseSize * s;
+  while (step < 16) step *= 2;
+  while (step >= 32) step /= 2;
+
+  const startX = ((ox % step) + step) % step, startY = ((oy % step) + step) % step;
+  x.strokeStyle = '#e8e8e8';
+  x.lineWidth = 1;
+  x.beginPath();
+  for (let px = startX; px <= w; px += step) {
+    x.moveTo(Math.floor(px) + 0.5, 20);
+    x.lineTo(Math.floor(px) + 0.5, h);
+  }
+  for (let py = startY; py <= h; py += step) {
+    x.moveTo(20, Math.floor(py) + 0.5);
+    x.lineTo(w, Math.floor(py) + 0.5);
+  }
+  x.stroke();
+
+  x.save();
+  x.beginPath();
+  x.rect(20, 20, w - 20, h - 20);
+  x.clip();
+
+  x.translate(ox, oy);
+  x.scale(s, s);
+
+  const cardMap = new Map();
+  cards.forEach(cd => cardMap.set(cd.id, cd));
+
+  // 1. Gambar Garis Link Flowchart Berpanah
+  connections.forEach(cn => {
+    const geom = getLinkGeom(cn);
+    if (geom) {
+      const isSelLink = (selectedLinkId === cn.id);
+
+      x.beginPath();
+      x.moveTo(geom.p1.x, geom.p1.y);
+      x.lineTo(geom.p2.x, geom.p2.y);
+      x.strokeStyle = isSelLink ? '#2563eb' : '#64748b';
+      x.lineWidth = (isSelLink ? 3.5 : 2) / s;
+      x.lineCap = 'round';
+      x.stroke();
+
+      const angle = Math.atan2(geom.dy, geom.dx);
+      drawArrowhead(x, geom.p2.x, geom.p2.y, angle);
+
+      x.fillStyle = isSelLink ? '#1d4ed8' : '#475569';
+      x.beginPath();
+      x.arc(geom.p1.x, geom.p1.y, 3.5 / s, 0, Math.PI * 2);
+      x.fill();
+
+      if (cn.label) {
+        x.save();
+        x.translate(geom.labelX, geom.labelY);
+        x.rotate(geom.angle);
+
+        if (cn._flipPrev === undefined) cn._flipPrev = geom.flip;
+        if (cn._flipPrev !== geom.flip) {
+          cn._flipAlpha = 0.2;
+          cn._flipPrev = geom.flip;
+        }
+        if (cn._flipAlpha !== undefined && cn._flipAlpha < 1) {
+          cn._flipAlpha += 0.08;
+          if (cn._flipAlpha >= 1) cn._flipAlpha = 1;
+          x.globalAlpha = cn._flipAlpha;
+        }
+
+        x.font = `500 ${geom.fontPt}px sans-serif`;
+        const textMetrics = x.measureText(cn.label);
+        const padX = 6 / s, padY = 3 / s;
+        const bgW = textMetrics.width + padX * 2;
+        const bgH = geom.fontPt * 1.25 + padY * 2;
+
+        x.fillStyle = isSelLink ? '#eff6ff' : '#ffffff';
+        x.strokeStyle = isSelLink ? '#2563eb' : '#cbd5e1';
+        x.lineWidth = 1 / s;
+        x.beginPath();
+        x.roundRect(-bgW / 2, -bgH / 2, bgW, bgH, 4 / s);
+        x.fill();
+        x.stroke();
+
+        x.fillStyle = isSelLink ? '#1d4ed8' : '#334155';
+        x.textAlign = 'center';
+        x.textBaseline = 'middle';
+        x.fillText(cn.label, 0, 0);
+
+        x.restore();
+      }
+    }
+  });
+
+  // Garis interaktif yang sedang ditarik
+  if (connSourcePin) {
+    const sc = cardMap.get(connSourcePin.cardId);
+    if (sc) {
+      const p1 = { x: sc.x + sc.w * connSourcePin.u, y: sc.y + sc.h * connSourcePin.v };
+      const p2 = hoveredPort ? { x: hoveredPort.x, y: hoveredPort.y } : { x: (curX - ox) / s, y: (curY - oy) / s };
+
+      x.beginPath();
+      x.moveTo(p1.x, p1.y);
+      x.lineTo(p2.x, p2.y);
+      x.strokeStyle = '#2563eb';
+      x.lineWidth = 2.5 / s;
+      x.setLineDash([6 / s, 4 / s]);
+      x.stroke();
+      x.setLineDash([]);
+
+      const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+      drawArrowhead(x, p2.x, p2.y, angle);
+
+      x.fillStyle = '#2563eb';
+      x.beginPath();
+      x.arc(p1.x, p1.y, 4.5 / s, 0, Math.PI * 2);
+      x.fill();
+    }
+  }
+
+  // 2. Gambar Kartu & Shape
+  for (const cd of cards) {
+    const isSel = selectedIds.has(cd.id);
+
+    x.save();
+
+    // Tambahkan Glow Dinamis Jika Terpilih (Kini lebih soft)
+    if (isSel) {
+      x.shadowColor = 'rgba(37, 99, 235, 0.4)'; // Warna yang lebih lembut dan agak transparan
+      x.shadowBlur = 6 * s; // Radius glow yang lebih kecil agar lebih nyaman
+    }
+
+    if (cd.type === 'shape') {
+      drawFlowchartPath(x, cd.shapeType, cd.x, cd.y, cd.w, cd.h);
+      x.fillStyle = '#ffffff';
+      x.fill();
+      
+      if (isSel) {
+        x.shadowColor = 'transparent';
+        x.shadowBlur = 0;
+      }
+
+      x.strokeStyle = '#2563eb';
+      x.lineWidth = 1 / s;
+      x.stroke();
+
+      // Skip menggambar teks jika sedang diedit
+      if (!(editingCard && cd.id === editingCard.id)) {
+        const scale = cd.scale || 1, effFs = 14 * scale, effLh = 20 * scale;
+        x.font = `${effFs}px sans-serif`;
+        x.fillStyle = '#1e293b';
+        const lines = cd.lines || [];
+        const totalH = lines.length * effLh;
+        const startY = cd.y + cd.h / 2 - totalH / 2 + effLh / 2;
+
+        const align = cd.align || 'center';
+        x.textAlign = align;
+        x.textBaseline = 'middle';
+        const textX = (align === 'center') ? (cd.x + cd.w / 2) : (align === 'right' ? cd.x + cd.w - 18 * scale : cd.x + 18 * scale);
+
+        lines.forEach((line, idx) => {
+          x.fillText(line, textX, startY + idx * effLh);
+        });
+      }
+    } else {
+      x.beginPath();
+      x.roundRect(cd.x, cd.y, cd.w, cd.h, 6);
+      
+      x.fillStyle = '#fff';
+      x.fill();
+
+      if (isSel) {
+        x.shadowColor = 'transparent';
+        x.shadowBlur = 0;
+      }
+
+      x.save();
+      x.clip();
+      if (cd.type === 'media' && cd.mediaType === 'image' && cd._img) {
+        try {
+          x.drawImage(cd._img, cd.x, cd.y, cd.w, cd.h);
+        } catch (err) {}
+      }
+      x.restore();
+
+      x.strokeStyle = '#2563eb';
+      x.lineWidth = 1 / s;
+      x.beginPath();
+      x.roundRect(cd.x, cd.y, cd.w, cd.h, 6);
+      x.stroke();
+
+      if (cd.type === 'text') {
+        if (!(editingCard && cd.id === editingCard.id)) {
+          const scale = cd.scale || 1, effFs = 14 * scale, effLh = 20 * scale, effPad = 12 * scale;
+          x.font = `${effFs}px sans-serif`;
+          x.fillStyle = '#222';
+          const lines = cd.lines || [];
+          const totalH = lines.length * effLh;
+          const startY = cd.y + cd.h / 2 - totalH / 2 + effLh / 2;
+
+          const align = cd.align || 'center';
+          x.textAlign = align;
+          x.textBaseline = 'middle';
+          const textX = (align === 'center') ? (cd.x + cd.w / 2) : (align === 'right' ? cd.x + cd.w - effPad : cd.x + effPad);
+
+          for (let i = 0; i < lines.length; i++) {
+            x.fillText(lines[i], textX, startY + i * effLh);
+          }
+        }
+      }
+    }
+
+    x.restore();
+  }
+
+  // 3. Port Koneksi Flowchart Sah
+  if (activeTool === 'link') {
+    const role = connSourcePin ? 'target' : 'source';
+
+    for (const cd of cards) {
+      const isSourceCard = connSourcePin && (cd.id === connSourcePin.cardId);
+
+      const ports = isSourceCard ?
+                    [{ u: connSourcePin.u, v: connSourcePin.v, dir: connSourcePin.dir }] :
+                    getFlowchartPortsForCard(cd, role);
+
+      ports.forEach(port => {
+        const px = cd.x + cd.w * port.u;
+        const py = cd.y + cd.h * port.v;
+
+        const isHovered = hoveredPort &&
+                          hoveredPort.cardId === cd.id &&
+                          hoveredPort.u === port.u &&
+                          hoveredPort.v === port.v;
+
+        const isStartPin = isSourceCard &&
+                           connSourcePin.u === port.u &&
+                           connSourcePin.v === port.v;
+
+        if (isHovered || isStartPin) {
+          x.shadowColor = 'rgba(37, 99, 235, 0.6)';
+          x.shadowBlur = 10 / s;
+          x.fillStyle = '#ffffff';
+          x.strokeStyle = '#2563eb';
+          x.lineWidth = 2.5 / s;
+          x.beginPath();
+          x.arc(px, py, 6.5 / s, 0, Math.PI * 2);
+          x.fill();
+          x.stroke();
+          x.shadowBlur = 0;
+        } else {
+          x.fillStyle = '#ffffff';
+          x.strokeStyle = '#2563eb';
+          x.lineWidth = 1.6 / s;
+          x.beginPath();
+          x.arc(px, py, 4 / s, 0, Math.PI * 2);
+          x.fill();
+          x.stroke();
+        }
+      });
+    }
+  }
+
+  x.restore();
+
+  // Resize handles
+  if (resizeCardId) {
+    const rcd = cards.find(c => c.id === resizeCardId);
+    if (rcd) {
+      const hSize = 8, half = hSize / 2,
+            corners = [
+              { x: rcd.x * s + ox, y: rcd.y * s + oy },
+              { x: (rcd.x + rcd.w) * s + ox, y: rcd.y * s + oy },
+              { x: (rcd.x + rcd.w) * s + ox, y: (rcd.y + rcd.h) * s + oy },
+              { x: rcd.x * s + ox, y: (rcd.y + rcd.h) * s + oy }
+            ];
+      x.save();
+      x.beginPath();
+      x.rect(20, 20, w - 20, h - 20);
+      x.clip();
+
+      x.fillStyle = '#2196f3';
+      x.strokeStyle = '#fff';
+      x.lineWidth = 1.5;
+      corners.forEach(pt => {
+        x.fillRect(pt.x - half, pt.y - half, hSize, hSize);
+        x.strokeRect(pt.x - half, pt.y - half, hSize, hSize);
+      });
+      x.restore();
+    }
+  }
+
+  // Marquee Selection Box
+  if (curBoxRect) {
+    x.save();
+    x.beginPath();
+    x.rect(20, 20, w - 20, h - 20);
+    x.clip();
+    x.fillStyle = 'rgba(33, 150, 243, 0.12)';
+    x.strokeStyle = '#2196f3';
+    x.lineWidth = 1;
+    x.setLineDash([4, 4]);
+    x.fillRect(curBoxRect.x, curBoxRect.y, curBoxRect.w, curBoxRect.h);
+    x.strokeRect(curBoxRect.x, curBoxRect.y, curBoxRect.w, curBoxRect.h);
+    x.restore();
+  }
+
+  drawRulers();
+}
+
+function drawRulers() {
+  const rw = 20;
+  let stepWorld = 100;
+  while (stepWorld * s < 50) stepWorld *= 2;
+  while (stepWorld * s > 120) stepWorld /= 2;
+
+  x.fillStyle = '#fafafa';
+  x.fillRect(0, 0, w, rw);
+  x.fillRect(0, 0, rw, h);
+
+  x.strokeStyle = '#dcdcdc';
+  x.lineWidth = 1;
+  x.beginPath();
+  x.moveTo(0, rw + 0.5); x.lineTo(w, rw + 0.5);
+  x.moveTo(rw + 0.5, 0); x.lineTo(rw + 0.5, h);
+  x.stroke();
+
+  const startWX = Math.floor((rw - ox) / s / stepWorld) * stepWorld;
+  x.fillStyle = '#888';
+  x.font = '9px sans-serif';
+  x.textAlign = 'left';
+  x.textBaseline = 'top';
+  x.strokeStyle = '#bbb';
+
+  for (let wx = startWX; wx * s + ox <= w; wx += stepWorld) {
+    const sx = Math.floor(wx * s + ox) + 0.5;
+    if (sx >= rw) {
+      x.beginPath();
+      x.moveTo(sx, rw - 6); x.lineTo(sx, rw);
+      x.stroke();
+      x.fillText(wx, sx + 2, 3);
+    }
+  }
+
+  const startWY = Math.floor((rw - oy) / s / stepWorld) * stepWorld;
+  for (let wy = startWY; wy * s + oy <= h; wy += stepWorld) {
+    const sy = Math.floor(wy * s + oy) + 0.5;
+    if (sy >= rw) {
+      x.beginPath();
+      x.moveTo(rw - 6, sy); x.lineTo(rw, sy);
+      x.stroke();
+      x.save();
+      x.translate(3, sy + 2);
+      x.rotate(-Math.PI / 2);
+      x.fillText(wy, -x.measureText(wy).width, 0);
+      x.restore();
+    }
+  }
+
+  x.fillStyle = '#fafafa';
+  x.fillRect(0, 0, rw, rw);
+  x.strokeStyle = '#dcdcdc';
+  x.strokeRect(0.5, 0.5, rw, rw);
+}
+
+function closeDropdowns() {
+  dropFile.classList.remove('open');
+  dropEdit.classList.remove('open');
+  dropView.classList.remove('open');
+  ctxMenu.classList.remove('open');
+  linkCtxMenu.classList.remove('open');
+  shapeFlyout.classList.remove('open');
+}
+
+document.getElementById('btnFile').addEventListener('click', e => {
+  e.stopPropagation();
+  const op = dropFile.classList.contains('open');
+  closeDropdowns();
+  if (!op) dropFile.classList.add('open');
+});
+document.getElementById('btnEdit').addEventListener('click', e => {
+  e.stopPropagation();
+  const op = dropEdit.classList.contains('open');
+  closeDropdowns();
+  if (!op) dropEdit.classList.add('open');
+});
+document.getElementById('btnView').addEventListener('click', e => {
+  e.stopPropagation();
+  const op = dropView.classList.contains('open');
+  closeDropdowns();
+  if (!op) dropView.classList.add('open');
+});
+window.addEventListener('click', () => closeDropdowns());
+
+document.getElementById('mImportMedia').onclick = () => fileInp.click();
+fileInp.addEventListener('change', e => {
+  const files = Array.from(e.target.files);
+  let off = 0;
+  files.forEach(f => {
+    createMediaCard(f, curX + off, curY + off);
+    off += 30;
+  });
+  fileInp.value = '';
+});
+
+document.getElementById('mUndo').onclick = undo;
+document.getElementById('mRedo').onclick = redo;
+document.getElementById('mCut').onclick = cutCard;
+document.getElementById('mCopy').onclick = copyCard;
+document.getElementById('mPaste').onclick = pasteCard;
+document.getElementById('mDup').onclick = dupCard;
+document.getElementById('mDel').onclick = delSelected;
+document.getElementById('mSelAll').onclick = selectAll;
+document.getElementById('mViewAll').onclick = zoomToFit;
+
+document.getElementById('ctxResize').onclick = () => {
+  if (selectedIds.size === 1) {
+    const sid = Array.from(selectedIds)[0];
+    resizeCardId = (resizeCardId === sid) ? null : sid;
+    draw();
+  }
+};
+document.getElementById('ctxOrigin').onclick = resetOriginSize;
+document.getElementById('ctxEdit').onclick = () => {
+  if (selectedIds.size === 1) {
+    const cd = cards.find(c => selectedIds.has(c.id));
+    startEditCard(cd);
+  }
+};
+document.getElementById('ctxCopy').onclick = copyCard;
+document.getElementById('ctxCut').onclick = cutCard;
+document.getElementById('ctxPaste').onclick = pasteCard;
+document.getElementById('ctxDup').onclick = dupCard;
+document.getElementById('ctxDel').onclick = delSelected;
+document.getElementById('ctxSelAll').onclick = selectAll;
+document.getElementById('ctxViewAll').onclick = zoomToFit;
+
+function setTextAlignSelected(alignment) {
+  if (!selectedIds.size) return;
+  sState();
+  cards.filter(c => selectedIds.has(c.id)).forEach(cd => {
+    if (cd.type === 'text' || cd.type === 'shape') {
+      cd.align = alignment;
+    }
+  });
+  draw();
+}
+document.getElementById('ctxAlignLeft').onclick = () => setTextAlignSelected('left');
+document.getElementById('ctxAlignCenter').onclick = () => setTextAlignSelected('center');
+document.getElementById('ctxAlignRight').onclick = () => setTextAlignSelected('right');
+
+document.getElementById('mLinkDesc').onclick = () => {
+  if (!selectedLinkId) return;
+  const cn = connections.find(l => l.id === selectedLinkId);
+  if (!cn) return;
+  const val = prompt('Masukkan keterangan garis link:', cn.label || '');
+  if (val !== null) {
+    sState();
+    cn.label = val.trim();
+    if (cn.labelT === undefined) cn.labelT = 0.5;
+    if (cn.labelSide === undefined) cn.labelSide = 1;
+    draw();
+  }
+};
+document.getElementById('mLinkDel').onclick = () => {
+  delSelected();
+};
+
+c.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  if (activeTool === 'link') {
+    connSourcePin = null;
+    draw();
+    return;
+  }
+  closeDropdowns();
+  const wx = (e.clientX - ox) / s, wy = (e.clientY - oy) / s;
+
+  const hitL = hitLink(wx, wy);
+  if (hitL) {
+    selectedLinkId = hitL.id;
+    selectedIds.clear();
+    resizeCardId = null;
+    draw();
+    linkCtxMenu.style.left = e.clientX + 'px';
+    linkCtxMenu.style.top = e.clientY + 'px';
+    linkCtxMenu.classList.add('open');
+    return;
+  }
+
+  const hit = hitCard(wx, wy);
+  if (hit) {
+    if (!selectedIds.has(hit.id)) {
+      selectedIds.clear();
+      selectedIds.add(hit.id);
+      selectedLinkId = null;
+      draw();
+    }
+    ctxMenu.querySelectorAll('.card-only').forEach(el => el.style.display = 'flex');
+    ctxMenu.querySelectorAll('.empty-only').forEach(el => el.style.display = 'none');
+
+    // Menu Perataan Banyak Kartu (T, B, L, R, C, E)
+    const isMulti = selectedIds.size >= 2;
+    ctxMenu.querySelectorAll('.multi-only').forEach(el => el.style.display = isMulti ? 'flex' : 'none');
+
+    const isTextCard = (hit.type === 'text' || hit.type === 'shape');
+    ctxMenu.querySelectorAll('.text-only').forEach(el => el.style.display = isTextCard ? 'flex' : 'none');
+
+    document.getElementById('ctxResize').style.display = (selectedIds.size === 1) ? 'flex' : 'none';
+    ctxResizeTxt.textContent = (resizeCardId === hit.id) ? 'Exit Resize Mode' : 'Resize Mode';
+    document.getElementById('ctxOrigin').style.display = selectedIds.size ? 'flex' : 'none';
+    document.getElementById('ctxEdit').style.display = (isTextCard && selectedIds.size === 1) ? 'flex' : 'none';
+    ctxMenu.style.left = e.clientX + 'px';
+    ctxMenu.style.top = e.clientY + 'px';
+    ctxMenu.classList.add('open');
+    return;
+  }
+
+  selectedIds.clear();
+  selectedLinkId = null;
+  draw();
+  ctxMenu.querySelectorAll('.card-only').forEach(el => el.style.display = 'none');
+  ctxMenu.querySelectorAll('.text-only').forEach(el => el.style.display = 'none');
+  ctxMenu.querySelectorAll('.multi-only').forEach(el => el.style.display = 'none');
+  ctxMenu.querySelectorAll('.empty-only').forEach(el => el.style.display = 'flex');
+  ctxMenu.style.left = e.clientX + 'px';
+  ctxMenu.style.top = e.clientY + 'px';
+  ctxMenu.classList.add('open');
+});
+
+c.addEventListener('dblclick', e => {
+  if (activeTool === 'link') return;
+  const wx = (e.clientX - ox) / s, wy = (e.clientY - oy) / s;
+  
+  const hitLbl = hitLinkLabel(wx, wy);
+  if (hitLbl) {
+    selectedLinkId = hitLbl.cn.id;
+    const val = prompt('Edit keterangan link:', hitLbl.cn.label || '');
+    if (val !== null) {
+      sState();
+      hitLbl.cn.label = val.trim();
+      draw();
+    }
+    return;
+  }
+
+  const hit = hitCard(wx, wy);
+  if (hit && (hit.type === 'text' || hit.type === 'shape')) startEditCard(hit);
+});
+
+window.addEventListener('paste', e => {
+  if (document.activeElement === editor) return;
+  const items = (e.clipboardData || window.clipboardData).items;
+  let handledMedia = false;
+  if (items) {
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      if (it.type.startsWith('image/')) {
+        const f = it.getAsFile();
+        if (f) {
+          createMediaCard(f, curX, curY);
+          handledMedia = true;
+          lastCopySource = 'system';
+          break;
+        }
+      }
+    }
+  }
+  if (!handledMedia) {
+    const txt = (e.clipboardData || window.clipboardData).getData('text');
+    if (txt) {
+      if (lastCopySource === 'internal' && clip.length > 0) {
+        pasteCard();
+      } else {
+        createAutoFitTextCard(txt, curX, curY);
+        lastCopySource = 'system';
+      }
+    }
+  }
+});
+
+window.addEventListener('copy', () => {
+  if (document.activeElement === editor) {
+    lastCopySource = 'system';
+  }
+});
+
+window.addEventListener('resize', r);
+window.addEventListener('wheel', e => e.preventDefault(), { passive: false });
+
+window.addEventListener('keydown', e => {
+  if (document.activeElement === editor) return;
+  const k = e.key.toLowerCase();
+
+  // SHORTCUT PERATAAN KARTU KETIKA MEMILIH KARTU (T, B, L, R, C, E)
+  if (selectedIds.size >= 2 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    if (k === 't') { e.preventDefault(); alignSelectedCards('top'); return; }
+    if (k === 'b') { e.preventDefault(); alignSelectedCards('bottom'); return; }
+    if (k === 'l') { e.preventDefault(); alignSelectedCards('left'); return; }
+    if (k === 'r') { e.preventDefault(); alignSelectedCards('right'); return; }
+    if (k === 'c') { e.preventDefault(); alignSelectedCards('centerH'); return; }
+    if (k === 'e') { e.preventDefault(); alignSelectedCards('centerV'); return; }
+  }
+
+  if (e.code === 'Space' || e.key === ' ') {
+    e.preventDefault();
+    toggleTool();
+    return;
+  }
+
+  if (e.key === 'Escape') {
+    if (activeTool === 'link' || activeTool === 'text' || activeTool === 'shape') {
+      connSourcePin = null;
+      setTool('pointer');
+      return;
+    }
+  }
+  if ((e.ctrlKey || e.metaKey) && k === 'i') {
+    e.preventDefault();
+    fileInp.click();
+  }
+  if (e.shiftKey && k === 'a' && !(e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    selectAll();
+  } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && k === 'a') {
+    e.preventDefault();
+    zoomToFit();
+  } else if ((e.ctrlKey || e.metaKey) && k === 'a') {
+    e.preventDefault();
+    selectAll();
+  }
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    delSelected();
+  }
+  if ((e.ctrlKey || e.metaKey) && k === 'z' && !e.shiftKey) {
+    e.preventDefault();
+    undo();
+  }
+  if ((e.ctrlKey || e.metaKey) && (k === 'y' || (e.shiftKey && k === 'z')) && !e.altKey && !(e.shiftKey && k === 'a')) {
+    e.preventDefault();
+    redo();
+  }
+  if ((e.ctrlKey || e.metaKey) && k === 'c') {
+    copyCard();
+  }
+  if ((e.ctrlKey || e.metaKey) && k === 'x') { e.preventDefault(); cutCard(); }
+  if ((e.ctrlKey || e.metaKey) && k === 'd') { e.preventDefault(); dupCard(); }
+});
+
+c.addEventListener('mousedown', e => {
+  closeDropdowns();
+  closeEditor();
+
+  if (e.button === 1) {
+    e.preventDefault();
+    isMiddlePanning = true;
+    panStartX = e.clientX;
+    panStartY = e.clientY;
+    updateCursor();
+    return;
+  }
+
+  if (e.button !== 0) return;
+
+  const wx = (e.clientX - ox) / s, wy = (e.clientY - oy) / s;
+
+  if (activeTool === 'text') {
+    const cd = createAutoFitTextCard('', e.clientX, e.clientY);
+    startEditCard(cd);
+    setTool('pointer');
+    return;
+  }
+
+  if (activeTool === 'shape') {
+    createFlowchartShape(currentShapeType, e.clientX, e.clientY);
+    setTool('pointer');
+    return;
+  }
+
+  if (activeTool === 'pan') {
+    isPanning = true;
+    panStartX = e.clientX;
+    panStartY = e.clientY;
+    updateCursor();
+    return;
+  }
+
+  // Handle Tool Link dengan Pembatasan Logika Flowchart
+  if (activeTool === 'link') {
+    const port = findHoverPort(e.clientX, e.clientY);
+    if (port) {
+      if (!connSourcePin) {
+        connSourcePin = {
+          cardId: port.cardId,
+          u: port.u,
+          v: port.v,
+          dir: port.dir,
+          type: port.type,
+          branch: port.branch
+        };
+      } else {
+        if (connSourcePin.cardId !== port.cardId) {
+          // Cegah Link Duplikat yang sama persis
+          const isDuplicate = connections.some(cn =>
+            cn.fromId === connSourcePin.cardId &&
+            cn.toId === port.cardId &&
+            cn.u1 === connSourcePin.u &&
+            cn.v1 === connSourcePin.v &&
+            cn.u2 === port.u &&
+            cn.v2 === port.v
+          );
+
+          if (!isDuplicate) {
+            sState();
+            let label = '';
+            if (connSourcePin.branch) {
+              label = connSourcePin.branch;
+            }
+
+            connections.push({
+              id: 'link_' + Date.now() + Math.random(),
+              fromId: connSourcePin.cardId, u1: connSourcePin.u, v1: connSourcePin.v,
+              toId: port.cardId, u2: port.u, v2: port.v,
+              label: label,
+              labelT: 0.5,
+              labelSide: 1
+            });
+          }
+          connSourcePin = null;
+          setTool('pointer');
+        } else {
+          connSourcePin = {
+            cardId: port.cardId,
+            u: port.u,
+            v: port.v,
+            dir: port.dir,
+            type: port.type,
+            branch: port.branch
+          };
+        }
+      }
+      draw();
+    } else {
+      connSourcePin = null;
+      draw();
+    }
+    return;
+  }
+
+  // Tool Pointer
+  if (resizeCardId) {
+    const rcd = cards.find(c => c.id === resizeCardId);
+    const hCorner = hitHandle(rcd, e.clientX, e.clientY);
+    if (hCorner) {
+      isResizing = true;
+      resizeCorner = hCorner;
+      resizeOriginBox = {
+        x: rcd.x, y: rcd.y, w: rcd.w, h: rcd.h,
+        baseW: rcd.baseW || rcd.w, baseH: rcd.baseH || rcd.h,
+        ratio: rcd.ratio || (rcd.w / rcd.h)
+      };
+      sState();
+      return;
+    }
+  }
+
+  const hitLbl = hitLinkLabel(wx, wy);
+  if (hitLbl) {
+    selectedLinkId = hitLbl.cn.id;
+    selectedIds.clear();
+    resizeCardId = null;
+    draggingLinkLabel = {
+      linkId: hitLbl.cn.id,
+      origT: hitLbl.cn.labelT || 0.5,
+      origSide: hitLbl.cn.labelSide || 1
+    };
+    sState();
+    draw();
+    return;
+  }
+
+  const hitL = hitLink(wx, wy);
+  if (hitL) {
+    selectedLinkId = hitL.id;
+    selectedIds.clear();
+    resizeCardId = null;
+    draw();
+    return;
+  } else {
+    selectedLinkId = null;
+  }
+
+  const hit = hitCard(wx, wy);
+  if (hit) {
+    if (!selectedIds.has(hit.id)) {
+      if (!e.shiftKey) selectedIds.clear();
+      selectedIds.add(hit.id);
+    }
+    if (resizeCardId && !selectedIds.has(resizeCardId)) resizeCardId = null;
+    dragC = true;
+    cMoved = false;
+    dragOrigX = wx;
+    dragOrigY = wy;
+    dragStarts.clear();
+    cards.filter(c => selectedIds.has(c.id)).forEach(c => dragStarts.set(c.id, { x: c.x, y: c.y }));
+    sState();
+  } else {
+    if (!e.shiftKey) {
+      selectedIds.clear();
+      resizeCardId = null;
+    }
+    isBoxSelecting = true;
+    boxSelStart = { x: e.clientX, y: e.clientY };
+    curBoxRect = { x: e.clientX, y: e.clientY, w: 0, h: 0 };
+  }
+  draw();
+});
+
+window.addEventListener('mousemove', e => {
+  curX = e.clientX;
+  curY = e.clientY;
+  updateCoord();
+
+  if (isMiddlePanning || isPanning) {
+    ox += e.clientX - panStartX;
+    oy += e.clientY - panStartY;
+    panStartX = e.clientX;
+    panStartY = e.clientY;
+    draw();
+    return;
+  }
+
+  if (activeTool === 'link') {
+    const prevHover = hoveredPort;
+    hoveredPort = findHoverPort(e.clientX, e.clientY);
+    if (hoveredPort !== prevHover || connSourcePin) {
+      draw();
+    }
+    updateCursor();
+    return;
+  }
+
+  if (draggingLinkLabel) {
+    const cn = connections.find(l => l.id === draggingLinkLabel.linkId);
+    if (cn) {
+      const geom = getLinkGeom(cn);
+      if (geom) {
+        const wx = (e.clientX - ox) / s, wy = (e.clientY - oy) / s;
+        const vpx = wx - geom.p1.x, vpy = wy - geom.p1.y;
+        let proj = (vpx * geom.ux + vpy * geom.uy) / geom.len;
+        proj = Math.max(0.08, Math.min(0.92, proj));
+        cn.labelT = proj;
+
+        const cross = vpx * geom.uy - vpy * geom.ux;
+        cn.labelSide = cross < 0 ? 1 : -1;
+        draw();
+      }
+    }
+    return;
+  }
+
+  if (isBoxSelecting) {
+    const rx = Math.min(boxSelStart.x, e.clientX);
+    const ry = Math.min(boxSelStart.y, e.clientY);
+    const rw = Math.abs(e.clientX - boxSelStart.x);
+    const rh = Math.abs(e.clientY - boxSelStart.y);
+    curBoxRect = { x: rx, y: ry, w: rw, h: rh };
+
+    const bwx1 = (rx - ox) / s, bwy1 = (ry - oy) / s;
+    const bwx2 = (rx + rw - ox) / s, bwy2 = (ry + rh - oy) / s;
+
+    cards.forEach(cd => {
+      const cx2 = cd.x + cd.w, cy2 = cd.y + cd.h;
+      const overlap = !(cd.x > bwx2 || cx2 < bwx1 || cd.y > bwy2 || cy2 < bwy1);
+      if (overlap) selectedIds.add(cd.id);
+      else if (!e.shiftKey) selectedIds.delete(cd.id);
     });
-    
-    // Init rendering
-    renderList(); 
-  </script>
+    draw();
+    return;
+  }
+
+  if (isResizing && resizeCardId) {
+    const rcd = cards.find(c => c.id === resizeCardId);
+    if (rcd && resizeOriginBox) {
+      const cwx = (e.clientX - ox) / s, cwy = (e.clientY - oy) / s,
+            ob = resizeOriginBox, ratio = ob.ratio;
+      let anchorX = ob.x, anchorY = ob.y, nw = ob.w;
+
+      if (resizeCorner === 'se') {
+        const dx = cwx - ob.x, dy = cwy - ob.y;
+        nw = Math.max(40, Math.max(dx, dy * ratio));
+        rcd.x = anchorX; rcd.y = anchorY; rcd.w = nw; rcd.h = nw / ratio;
+      } else if (resizeCorner === 'nw') {
+        anchorX = ob.x + ob.w; anchorY = ob.y + ob.h;
+        const dx = anchorX - cwx, dy = anchorY - cwy;
+        nw = Math.max(40, Math.max(dx, dy * ratio));
+        rcd.w = nw; rcd.h = nw / ratio;
+        rcd.x = anchorX - rcd.w; rcd.y = anchorY - rcd.h;
+      } else if (resizeCorner === 'ne') {
+        anchorX = ob.x; anchorY = ob.y + ob.h;
+        const dx = cwx - ob.x, dy = anchorY - cwy;
+        nw = Math.max(40, Math.max(dx, dy * ratio));
+        rcd.w = nw; rcd.h = nw / ratio;
+        rcd.x = anchorX; rcd.y = anchorY - rcd.h;
+      } else if (resizeCorner === 'sw') {
+        anchorX = ob.x + ob.w; anchorY = ob.y;
+        const dx = anchorX - cwx, dy = cwy - ob.y;
+        nw = Math.max(40, Math.max(dx, dy * ratio));
+        rcd.w = nw; rcd.h = nw / ratio;
+        rcd.x = anchorX - rcd.w; rcd.y = anchorY;
+      }
+      rcd.scale = rcd.w / (rcd.baseW || ob.w);
+      if (rcd.type === 'text' || rcd.type === 'shape') updateCardLayout(rcd, rcd.raw);
+      draw();
+    }
+    return;
+  }
+
+  // DRAG KARTU DENGAN SHIFT (SNAP LURUS ORTOGONAL HORIZONTAL / VERTIKAL)
+  if (dragC && selectedIds.size) {
+    cMoved = true;
+    const wx = (e.clientX - ox) / s, wy = (e.clientY - oy) / s;
+    let dx = wx - dragOrigX, dy = wy - dragOrigY;
+
+    if (e.shiftKey) {
+      // Mengunci lurus sesuai sumbu yang terdekat dengan tarikan kursor
+      if (Math.abs(dx) >= Math.abs(dy)) {
+        dy = 0; // Kunci horizontal
+      } else {
+        dx = 0; // Kunci vertikal
+      }
+    }
+
+    cards.filter(c => selectedIds.has(c.id)).forEach(c => {
+      const st = dragStarts.get(c.id);
+      if (st) { c.x = st.x + dx; c.y = st.y + dy; }
+    });
+    draw();
+    return;
+  }
+
+  const wx = (e.clientX - ox) / s, wy = (e.clientY - oy) / s;
+  if (hitLinkLabel(wx, wy)) {
+    c.style.cursor = 'grab';
+    return;
+  }
+
+  if (activeTool === 'pointer' && resizeCardId) {
+    const rcd = cards.find(c => c.id === resizeCardId);
+    const hCorner = hitHandle(rcd, e.clientX, e.clientY);
+    if (hCorner) {
+      c.style.cursor = getCornerCursor(hCorner);
+      return;
+    }
+  }
+
+  updateCursor();
+});
+
+window.addEventListener('mouseup', e => {
+  if (e.button === 1) {
+    isMiddlePanning = false;
+    updateCursor();
+    return;
+  }
+
+  if (isPanning) {
+    isPanning = false;
+    updateCursor();
+  }
+
+  if (draggingLinkLabel) {
+    draggingLinkLabel = null;
+  }
+
+  if (isBoxSelecting) {
+    isBoxSelecting = false;
+    curBoxRect = null;
+    draw();
+  }
+
+  if (isResizing) {
+    isResizing = false;
+    resizeCorner = null;
+    resizeOriginBox = null;
+  }
+
+  if (dragC && !cMoved && undoSt.length) undoSt.pop();
+  dragC = false;
+  updateCursor();
+});
+
+c.addEventListener('wheel', e => {
+  e.preventDefault();
+  applyZoom(e.deltaY < 0 ? 1.1 : 0.9, e.clientX, e.clientY);
+}, { passive: false });
+
+r();
+</script>
 </body>
 </html>
